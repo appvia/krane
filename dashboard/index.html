@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Kubernetes RBAC Visualiser</title>
+    <link href="css/bootstrap.css" rel="stylesheet">
+  </head>
+  <body>
+    <div class="container">
+      <h1>RBAC</h1>
+      <div class="row findings"></div>
+      <div class="row">
+        <hr>
+        <div class="col-sm-4">
+          <h2>Search</h2>
+          <!-- <form> -->
+            <div class="form-group">
+              <label for="input-search" class="sr-only">Search:</label>
+              <input type="input" class="form-control" id="input-search" placeholder="Type to search..." value="">
+            </div>
+            <div class="checkbox">
+              <label>
+                <input type="checkbox" class="checkbox" id="chk-ignore-case" value="false">
+                Ignore Case
+              </label>
+            </div>
+            <div class="checkbox">
+              <label>
+                <input type="checkbox" class="checkbox" id="chk-exact-match" value="false">
+                Exact Match
+              </label>
+            </div>
+            <div class="checkbox">
+              <label>
+                <input type="checkbox" class="checkbox" id="chk-reveal-results" value="false">
+                Reveal Results
+              </label>
+            </div>
+            <button type="button" class="btn btn-success" id="btn-search">Search</button>
+            <button type="button" class="btn btn-default" id="btn-clear-search">Clear</button>
+          <!-- </form> -->
+        </div>
+        <div class="col-sm-8">
+          <div id="treeview-searchable" class=""></div>
+        </div>
+      </div>
+      <br/>
+    </div>
+    <script src="js/jquery.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/bootstrap-treeview.js"></script>
+    <script type="text/javascript">
+
+      $(function() {
+
+        $.urlParam = function(name){
+          var results = new RegExp('[\?&]' + name + '=([^]*)').exec(window.location.href);
+          return results[1] || 0;
+        };
+
+        $.getJSON("data/" + $.urlParam('cluster') + "/rbac-tree.json", function(rbac) {
+
+          var $searchableTree = $('#treeview-searchable').treeview({
+            data: [ rbac ], 
+            expandIcon: 'glyphicon glyphicon-chevron-right',
+            collapseIcon: 'glyphicon glyphicon-chevron-down',
+            showTags: true,
+            showBorder: true,
+            enableLinks: true,
+          });
+
+          var search = function(e) {
+            var pattern = $('#input-search').val();
+            var options = {
+              ignoreCase: $('#chk-ignore-case').is(':checked'),
+              exactMatch: $('#chk-exact-match').is(':checked'),
+              revealResults: $('#chk-reveal-results').is(':checked'),
+            };
+            var results = $searchableTree.treeview('search', [ pattern, options ]);
+
+            var output = '<p>' + results.length + ' matches found</p>';
+            $.each(results, function (index, result) {
+              output += '<p>- ' + result.text + '</p>';
+            });
+            $('#search-output').html(output);
+          }
+
+          $('#btn-search').on('click', search);
+          $('#input-search').on('keyup', search);
+
+          $('#btn-clear-search').on('click', function (e) {
+            $searchableTree.treeview('clearSearch');
+            $('#input-search').val('');
+            $('#search-output').html('');
+          });
+
+        });
+
+        $.getJSON("data/" + $.urlParam('cluster') + "/rbac-findings.json", function(findings) {
+          var $findings = $('.findings');
+          $.each(findings, function () {
+            var items = $.isEmptyObject(this.items) ? '' : '<li>' + this.items.sort().join(" <li> ");
+            var count = $.isEmptyObject(this.items) ? 0 : this.items.length;
+            $findings.append('<div class="alert alert-' + this.severity + ' alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button><strong><span class="label label-'+ this.severity +'">' + this.severity.toUpperCase() + '</span>&nbsp;' + this.group_title + '&nbsp;<span class="badge">' + count + '</span>&nbsp;<a href="#" data-toggle="tooltip" title="" data-original-title="' + this.info + '" class="glyphicon glyphicon-question-sign alert-'+ this.severity +'" data-placement="right"></a></strong>' + items + '</div>');
+          });
+
+
+          $('[data-toggle="tooltip"]').tooltip();
+        });
+
+      });
+    </script>
+  </body>
+</html>

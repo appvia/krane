@@ -1,0 +1,103 @@
+---
+rules:
+- group_title: "Subjects with privileged PSP access not scoped to a namespace"
+  severity: :danger
+  info: "Subjects below are able to run privileged containers and are not scoped to a particular namespace. This might be potential security risk!"
+  query: |
+    MATCH (p:Psp)-[:SECURITY]->(r:Rule)<-[:GRANT]-(ro:Role)<-[:ASSIGN]-(s:Subject)
+    WHERE p.privileged='true' AND p.name != 'kube-system' AND (s.namespace = '' OR s.namespace = NULL) AND ro.defined = true
+    RETURN p.name as psp_name, s.kind as subject_kind, s.name as subject_name
+  writer: |
+    "psp: #{r[:psp_name]} - #{r[:subject_kind]} #{r[:subject_name]}"
+
+- group_title: "Subjects with open cluster-wide access"
+  severity: :warning
+  info: "Subjects with * access to * resources (apiGroups: *, core) in the context of an entire cluster. This might be potential security risk!"
+  query: |
+    MATCH (r:Rule)<-[:GRANT]-(ro:Role)<-[:ASSIGN]-(s:Subject) 
+    WHERE ((r.api_group = '*' OR r.api_group = 'core')  AND (r.resource = '*' OR r.url = '*') AND r.verb = '*') 
+    AND (s.namespace = '' OR s.namespace = NULL) AND ro.defined = true
+    RETURN r.api_group as rule_api_group, r.type as rule_type, r.resource as rule_resource, r.url as rule_url, r.verb as rule_verb,
+    s.kind as subject_kind, s.name as subject_name
+    ORDER BY subject_name,subject_kind
+  writer: |
+    txt = r[:rule_type] == 'resource' ? 'resources' : 'non-resource URLs'
+    "#{r[:subject_kind]} #{r[:subject_name]} has * access to * #{txt} (apiGroup: #{r[:rule_api_group]})"
+
+- group_title: "Subjects with open namespace level access"
+  severity: :warning
+  info: "Subjects with * access to * resources (apiGroups: *, core) within the scope of a namespace. This might be potential security risk."
+  query: |
+    MATCH (r:Rule)<-[:GRANT]-(ro:Role)<-[:ASSIGN]-(s:Subject) 
+    WHERE ((r.api_group = '*' OR r.api_group = 'core')  AND (r.resource = '*' OR r.url = '*') AND r.verb = '*') 
+      AND s.namespace != '' AND ro.defined = true
+    RETURN r.api_group as rule_api_group, r.type as rule_type, r.resource as rule_resource, r.url as rule_url, r.verb as rule_verb,
+      s.kind as subject_kind, s.name as subject_name, s.namespace as subject_namespace
+    ORDER BY subject_namespace, subject_name, subject_kind
+  writer: |
+    txt = r[:rule_type] == 'resource' ? 'resources' : 'non-resource URLs'
+    "#{r[:subject_kind]} #{r[:subject_name]} has * access to * #{txt} (apiGroup: #{r[:rule_api_group]}) in #{r[:subject_namespace]} namespace"
+
+- group_title: "Subjects with ability to manage RBAC"
+  severity: :warning
+  info: "List of Subjects who can manage Roles and RoleBindings. This might be potential security risk."
+  query: |
+    MATCH (s:Subject)-[:ASSIGN]->(ro:Role)-[:GRANT]->(r:Rule) 
+    WHERE ro.defined = true 
+      AND (r.verb = 'create' OR r.verb = '*') 
+      AND (r.api_group = 'rbac.authorization.k8s.io' OR r.api_group = '*') 
+      AND (r.resource = 'roles' OR r.resource = 'rolebindings' OR r.resource = '*')
+    RETURN s.kind as subject_kind, s.name as subject_name, s.namespace as subject_namespace
+    ORDER BY subject_kind, subject_name DESC
+  writer: |
+    ns = r[:subject_namespace].blank? ? 'Cluster-Wide' : "in #{r[:subject_namespace]} namespace"
+    "#{r[:subject_kind]} #{r[:subject_name]} (#{ns})"
+
+- group_title: "Subjects associated with non-existing roles"
+  severity: :warning
+  info: "List of Subjects with Role or ClusterRole which hasn't been defined. Check whether this Role should exist."
+  query: |
+    MATCH (s:Subject)-[:ASSIGN]->(r:Role)
+    WHERE r.defined = false
+    RETURN r.kind as role_kind, r.name as role_name, s.kind as subject_kind, 
+      s.name as subject_name, s.namespace as subject_namespace
+    ORDER BY subject_namespace, subject_name, subject_kind
+  writer: |
+    "#{r[:subject_kind]} #{r[:subject_name]} is bound to non-existing #{r[:role_kind]} #{r[:role_name]}"
+
+- group_title: "Dangling roles (not bound to any subject)"
+  severity: info
+  info: "List of roles that are defined however not assigned to any of the Subjects. Is this Role/ClusteRole needed?"
+  query: |
+    MATCH (r:Role)-[:ASSIGN]->(s:Subject) 
+    WHERE r.defined = true AND s.name = NULL
+    RETURN r.kind as role_kind, r.name as role_name
+    ORDER BY role_kind, role_name
+  writer: |
+    "#{r[:role_kind]} #{r[:role_name]} is not bound to any Subject(s)"
+
+- group_title: "Subjects associated with multiple roles"
+  severity: :info
+  info: "List of Subjects associated with multiple roles. This may indicate a bad RBAC design. Consider role aggregation."
+  query: |
+    MATCH (s:Subject)-[:ASSIGN]->(r:Role)
+    WHERE r.defined = true
+    RETURN count(r) as role_count, s.kind as subject_kind, s.name as subject_name, s.namespace as subject_namespace
+    ORDER BY role_count, subject_namespace, subject_name, subject_kind DESC
+  threshold: 4
+  writer: |   
+    "#{r[:subject_kind]} #{r[:subject_name]} referenced by #{r[:role_count].to_i} roles" if r[:role_count].to_i >= threshold
+
+- group_title: "Namespaces with multiple subjects"
+  severity: :info
+  info: |
+    List of Namespaces with multiple subjects. Sagnificant number of Subjects having access 
+    to Namespace might indicate bad design or potential security risk.
+  query: |
+    MATCH (s:Subject) 
+    RETURN count(s.name) as subject_count, s.namespace as subject_namespace
+    ORDER BY subject_count, subject_namespace DESC
+  threshold: 5
+  writer: |
+    ns = r[:subject_namespace].empty? ? 'CLUSTER-WIDE' : "#{r[:subject_namespace]} namespace"
+    "#{ns} allows #{r[:subject_count].to_i} subject(s)" if r[:subject_count].to_i >= threshold
