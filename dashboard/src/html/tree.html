@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+${require('./partials/_head.html')}
+
+<link href="vendor/bootstrap-treeview/bootstrap-treeview.min.css" rel="stylesheet" type="text/css">
+
+<body id="page-top">
+
+  <!-- Page Wrapper -->
+  <div id="wrapper">
+
+    <!-- Sidebar -->
+    ${require('./partials/_sidebar.html')}
+    <!-- End of Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+      <!-- Main Content -->
+      <div id="content">
+
+        <!-- Topbar -->
+        ${require('./partials/_topbar_no_search.html')}
+        <!-- End of Topbar -->
+
+        <!-- Begin Page Content container-fluid -->
+        <div class="container-fluid">          
+          <!-- Page Heading -->
+          <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">RBAC Facets</h1>
+          </div>
+
+          <!-- Content Row -->
+          <div class="row">
+            <!-- Search box -->
+            <div class="col-xl-3 col-lg-4">
+              <div class="card shadow mb-4">
+                <!-- Card Header  -->
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Search</h6>
+                </div>
+                 <!-- Card Body -->
+                <div class="card-body">
+                  <div class="form-group">
+                    <label for="input-search" class="sr-only">Search:</label>
+                    <input type="input" class="form-control" id="input-search" placeholder="Search RBAC..." value="">
+                  </div>
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" class="checkbox" id="chk-ignore-case" value="false">
+                      Ignore Case
+                    </label>
+                  </div>
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" class="checkbox" id="chk-exact-match" value="false">
+                      Exact Match
+                    </label>
+                  </div>
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" class="checkbox" id="chk-reveal-results" value="false">
+                      Reveal Results
+                    </label>
+                  </div>
+                  <div class="my-3"></div>
+                  <button type="button" class="btn btn-success" id="btn-search">Search</button>
+                  <button type="button" class="btn btn-default" id="btn-clear-search">Clear</button>
+                </div>
+              </div>
+
+              <div class="card shadow mb-4 sticky">
+                <!-- Card Header  -->
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Rule description</h6>
+                </div>
+                <!-- Card Body -->
+                <div class="card-body">
+                  <div id="rule-description">
+                    Nothing selected. Please select a node in the tree on the right hand side.
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Summary box -->
+            <div class="col-xl-9 col-lg-8">
+              <div class="card shadow mb-4">
+                <!-- Card Header  -->
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">NOTE: RBAC Facets *ONLY* shows Roles/ClusterRoles in use i.e. assigned to a Subject!</h6>
+                </div>
+                <!-- Card Body -->
+                <div class="card-body">
+                  <div id="treeview-searchable" class=""></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.container-fluid -->
+
+      </div>
+      <!-- End of Main Content -->
+
+      <!-- Footer -->
+      ${require('./partials/_footer.html')}
+      <!-- End of Footer -->
+
+    </div>
+    <!-- End of Content Wrapper -->
+
+  </div>
+  <!-- End of Page Wrapper -->
+
+  <!-- Scroll to Top Button-->
+  <a class="scroll-to-top rounded" href="#page-top">
+    <i class="fas fa-angle-up"></i>
+  </a>
+
+  ${require('./partials/_scripts.html')}
+  
+  <script src="vendor/stickyfilljs/stickyfill.min.js"></script>
+  <script src="vendor/bootstrap-treeview/bootstrap-treeview.js"></script>
+  <script src="js/rbac-tree.min.js"></script>
+</body>
+
+</html>

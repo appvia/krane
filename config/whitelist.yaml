@@ -1,0 +1,27 @@
+---
+rules:
+  # global:
+  #   whitelist_role_names:
+  #     - acp:prometheus:operator
+  #     - acp:robot:default
+  #     - acp:cert-manager
+  #   whitelist_subject_names:
+  #     - admin
+
+  # common:
+  #   subjects-with-privileged-psp-not-scoped-to-ns:
+  #     whitelist_subject_names:
+  #       - privileged-psp-users
+  #   subjects-with-open-cluster-wide-access:
+  #     whitelist_subject_names:
+  #       - system:masters
+
+  # cluster:
+  #   default:
+  #     subjects-with-privileged-psp-not-scoped-to-ns:
+  #       whitelist_subject_names:
+  #         - privileged-psp-users
+  #   minikube:
+  #     subjects-with-privileged-psp-not-scoped-to-ns:
+  #       whitelist_subject_names:
+  #         - other-privileged-psp-users

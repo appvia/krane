@@ -1,0 +1,142 @@
+---
+version: 2.1
+
+orbs:
+  ruby: circleci/ruby@0.2.1
+
+executors:
+  skaffold:
+    docker:
+      - image: gcr.io/k8s-skaffold/skaffold:latest
+
+jobs:
+  test:
+    parallelism: 1
+    docker:
+      - image: ruby:2.6.5-alpine3.10
+        environment:
+          BUNDLE_JOBS: 10
+          BUNDLE_RETRY: 5
+          BUNDLE_PATH: vendor/bundle
+          KRANE_ENV: test
+    steps:
+      - checkout
+      - run:
+          name: Install system deps
+          command: apk add --update --no-cache git bash curl make gcc libc-dev tzdata g++ npm
+      - run:
+          name: Which bundler?
+          command: bundle -v
+      - run:
+          name: Configure Bundler
+          command: gem install bundler -v $(cat Gemfile.lock | tail -1 | tr -d " ")
+      - ruby/load-cache
+      - ruby/install-deps
+      - ruby/save-cache
+      - ruby/run-tests
+
+  build_only:
+    executor: skaffold
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+          version: 18.06.0-ce
+      - run:
+          name: Build artifacts w/ Skaffold
+          command: |
+            mkdir -p build
+            skaffold build -p build-no-push --file-output build/${CIRCLE_SHA1}.json
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - build
+
+  build_and_push:
+    executor: skaffold
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+          version: 18.06.0-ce
+      - run:
+          name: Build & Push artifacts w/ Skaffold
+          command: |
+            mkdir -p build
+            docker login quay.io --username $DOCKER_USER --password $DOCKER_PASSWORD
+            skaffold build -p build-and-push --file-output build/${CIRCLE_SHA1}.json
+            # re-tag :latest
+            skaffold_tag=$(cat build/${CIRCLE_SHA1}.json | jq -r '.builds[0].tag | split("@")[0]')
+            skaffold_image=$(cat build/${CIRCLE_SHA1}.json | jq -r '.builds[0].imageName')
+            docker tag ${skaffold_tag} ${skaffold_image}:latest
+            docker push ${skaffold_image}:latest
+      - persist_to_workspace:
+          root: ~/project
+          paths:
+            - build
+
+  deploy:
+    executor: skaffold
+    parameters:
+      skaffold_kube_context:
+        type: string
+        default: ""
+      skaffold_namespace:
+        type: string
+        default: ""
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+          version: 18.06.0-ce
+      - attach_workspace:
+          at: ~/project
+      - run:
+          name: Build & Push artifacts and Deploy w/ Skaffold
+          command: |
+            # ACCESS_CONFIG env variable contains KUBECONFIG with access to deployment environments
+            echo $ACCESS_CONFIG | base64 -d > ./kubeconfig
+
+            # Prepare skaffold for deployment to correct environment
+            export SKAFFOLD_KUBECONFIG=./kubeconfig
+            export SKAFFOLD_CACHE_ARTIFACTS=true
+            export SKAFFOLD_STATUS_CHECK=false
+            export SKAFFOLD_LABEL="io.appvia.krane/git-sha=${CIRCLE_SHA1}"
+            export SKAFFOLD_KUBE_CONTEXT=<<parameters.skaffold_kube_context>>
+            export SKAFFOLD_NAMESPACE=<<parameters.skaffold_namespace>>
+            
+            # Deploy with Skaffold - refers to artefacts built in previous step
+            skaffold deploy --build-artifacts build/${CIRCLE_SHA1}.json
+
+workflows:
+  version: 2
+  run_build:
+    jobs:
+      - test
+
+      - build_only:
+          requires:
+          - test
+          filters:
+            branches:
+              ignore: master
+            tags:
+              ignore: /.*/
+
+      - build_and_push:
+          requires:
+          - test
+          filters:
+            branches:
+              only: master
+
+      # - deploy:
+      #     skaffold_kube_context: qa
+      #     skaffold_namespace: krane
+      #     requires:
+      #     - build_and_push
+      #     filters:
+      #       branches:
+      #         only: master
+      #       tags:
+      #         only: /^v\d+\.\d+\.\d+$/

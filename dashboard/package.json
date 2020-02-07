@@ -1,0 +1,56 @@
+{
+    "title": "Kubernetes RBAC Inspector",
+    "name": "kubernetes-rbac-inspector",
+    "version": "1.0.0",
+    "scripts": {
+        "start": "node_modules/.bin/gulp watch"
+    },
+    "description": "Kubernetes RBAC security risk inspector",
+    "homepage": "https://github.com/appvia/rbacvis",
+    "author": "Appvia.io",
+    "contributors": [
+        "Marcin Ciszak (@marcinc)"
+    ],
+    "license": "ISC",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/appvia/rbacvis.git"
+    },
+    "dependencies": {
+        "bootstrap": "4.3.1",
+        "chart.js": "2.8.0",
+        "express": "4.17.1",
+        "@fortawesome/fontawesome-free": "5.10.2",
+        "patternfly-bootstrap-treeview": "2.1.10",
+        "jquery": "3.4.1",
+        "jquery.easing": "^1.4.1",
+        "keycharm": "^0.2.0",
+        "@popperjs/core": "2.0.6",
+        "popper.js": "^1.16.1",
+        "prismjs": "1.17.1",
+        "stickyfilljs": "2.1.0",
+        "vis-data": "^6.2.1",
+        "vis-network": "6.4.7",
+        "vis-util": "^1.1.8",
+        "vue": ""
+    },
+    "devDependencies": {
+        "@babel/core": "7.7.5",
+        "babel-preset-env": "1.7.0",
+        "browser-sync": "2.26.7",
+        "del": "5.1.0",
+        "gulp": "4.0.2",
+        "gulp-autoprefixer": "7.0.0",
+        "gulp-babel": "8.0.0",
+        "gulp-clean-css": "4.2.0",
+        "gulp-exec": "4.0.0",
+        "gulp-header": "2.0.9",
+        "gulp-plumber": "^1.2.1",
+        "gulp-rename": "1.4.0",
+        "gulp-sass": "4.0.2",
+        "gulp-uglify": "3.0.2",
+        "html-includes": "4.2.0",
+        "merge-stream": "2.0.0",
+        "opencollective": "1.0.3"
+    }
+}

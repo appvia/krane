@@ -1,0 +1,6 @@
+---
+config:
+  notifications:
+    slack:
+      webhook_url: ''
+      channel: ''

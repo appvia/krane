@@ -1,0 +1,38 @@
+<!-- Page Heading -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4 heading">
+  <h1 class="h3 mb-0 text-gray-800">Findings > ${props.key}</h1>
+</div>
+
+
+<div class="row">
+
+  <div class="col-lg-12" id="findings">
+
+    <div :class="'card mb-4 py-3 border-left-' + item.status" v-for="item in filteredList('${props.key}')">
+
+      <div class="card-body">
+        <div class="row no-gutters align-items-center">
+          <div class="col mr-2">
+            <div :class="'text-s font-weight-bold text-uppercase mb-1 text-' + item.status">
+              {{ item.group_title }}
+              <span class="btn-secondary btn-circle btn-sm" v-if="item.items">
+                <div class="h6 mb-0 font-weight-bold text-white-500">{{ item.items.length }}</div>
+              </span>
+              <a href="#" data-toggle="tooltip" title=""
+                :data-original-title="item.info"
+                :class="'fas fa-question-circle btn-circle btn-sm btn-' + item.status"
+                data-placement="right">
+              </a>
+            </div>
+            <div v-for="i in item.items">
+              <span>- {{ i }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

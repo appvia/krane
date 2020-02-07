@@ -1,0 +1,46 @@
+/*Finding page heading*/
+
+.heading {
+  text-transform: capitalize;
+}
+
+/* Tree */
+
+#treeview-searchable .badge {
+  color: #fff;
+  background-color: #858796;
+  float: right;
+  margin-left: 3px;
+}
+
+/* Rule description box */
+
+.sticky {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 340px;
+}
+.sticky:before,
+.sticky:after {
+  content: '';
+  display: table;
+}
+
+#rule-description {
+  width: 250px;
+  font-size: 1.1em;
+}
+
+.rule-component {
+  color: #FFF !important;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+/* Graph */
+
+#rbac-graph-network {
+  width: 100%;
+  height: 900px;
+}
+

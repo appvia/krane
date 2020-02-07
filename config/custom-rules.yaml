@@ -1,0 +1,20 @@
+---
+# End user can and and/or modify existing built-in macros and rules by editing this file.
+# Macros and rules with the same IDs will get compiled together, and attributes defined in this file
+# will take precedence over the ones defined in built-in set defined in rules.yaml.
+# List of supported attributes is specified in rules.yaml comments.
+
+macros:
+  # risky-role:
+  #   query: |
+  #     your-own-query-override-goes-here
+  #   writer: |
+  #     your-own-writer-override-goes-here
+
+rules:
+# - id: subjects-with-privileged-psp-not-scoped-to-ns
+#   group_title: "ANOTHER GROUP TITLE"
+#   severity: :danger
+
+# - id: subjects-with-open-cluster-wide-access
+#   disabled: true

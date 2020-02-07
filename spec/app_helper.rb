@@ -1,13 +1,10 @@
 require 'rubygems'
 require 'bundler'
-Bundler.require(:default)
+Bundler.setup(:default, :development)
 
-require 'commander'
-require 'colorize'
-require 'redisgraph'
-
-require 'active_support/core_ext/object/blank'
-require 'active_support/core_ext/string'
+require 'vendor'
+require 'rspec'
+require 'factory_bot'
 
 dir = File.expand_path(File.join(File.dirname(__FILE__), '../lib/**.rb'))
 

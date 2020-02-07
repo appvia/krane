@@ -1,0 +1,17 @@
+.DS_Store
+.bundle
+.circleci/
+.vscode
+.git
+.gitignore
+.dockerignore
+.rspec
+.DS_Store
+kubeconfig
+Dockerfile
+docker-compose.yml
+skaffold.yaml
+/cache
+/k8s
+/spec
+/tmp

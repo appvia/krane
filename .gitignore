@@ -1,3 +1,11 @@
 .DS_Store
 /cache
+/tmp
 /dashboard/data
+/dashboard/node_modules
+/dashboard/vendor
+/dashboard/compiled
+/dashboard/src/js/*.min.js
+/dashboard/src/css/*.min.css
+.bundle
+.vscode
