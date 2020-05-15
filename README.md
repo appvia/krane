@@ -55,7 +55,7 @@ _Krane_ docker image will be pre-build automatically if not already present.
 
 Note that when running `docker-compose` locally, _Krane_ won't start RBAC _report_ and _dashboard_ automatically. Instead, the container will sleep (for 24h by default - this value can be adjusted in docker-compose.override.yml). Exec into a running _Krane_ container to run commands. Local `docker-compose` will also mount kube config (`~/.kube/config`) inside the container so you can run reports against any Kubernetes clusters to which you already have access to.
 
-```
+```sh
 # Exec into a running Krane container
 
 docker-compose exec krane bash
@@ -203,7 +203,7 @@ In order to query the graph directly you can exec into a running `redisgraph` co
 
 You can also query the Graph from _Krane_ console. First exec into running _Krane_ container, then
 
-```
+```ruby
 # Start Krane console - this will open interactive ruby shell with Krane code preloaded
 
 console
@@ -221,7 +221,9 @@ res = graph.query(%Q(
 # Print the results
 
 res.print_resultset
+```
 
+```
 # Results...
 +----------------+--------------------------------+-----------+------------------------------------------------+
 | subject_kind   | subject_name                   | role_kind | role_name                                      |
@@ -276,7 +278,7 @@ Rule can contain any of the following attributes:
 
 - `match_rules`  [Conditonal] Required when `template` relies on match rules in order to build a query.
   - Example:
-    ```
+    ```yaml
      match_rules:
      - resources: ['cronjobs']
        verbs: ['update']
@@ -285,7 +287,7 @@ Rule can contain any of the following attributes:
 
 - `custom_params` [Optional] List of custom key-value pairs to be evaluated and replaced in a rule `query` / `writer` representations.
   - Example:
-    ```
+    ```yaml
     custom_params:
     - attrA: valueA
     - attrB: valueB
@@ -300,7 +302,7 @@ Rule can contain any of the following attributes:
 #### Risk Rule examples
 
 ##### Explicit query / writer expression
-```
+```yaml
 - id: verbose-rule-example
   group_title: Example rule
   severity:    :danger
@@ -338,7 +340,7 @@ Note:
 
 Built-in templates simplify risk rule definition significantly, however, they are designed to extract specific kind of information and may not be a good fit for your custom rules. If you find yourself reusing the same `query` or `writer` expressions acros multiple rules, you should consider extracting those to a `macro` and reference it in your custom rules to DRY them up.
 
-```
+```yaml
 - id: risky-any-verb-secrets
   group_title: Risky Roles/ClustersRoles allowing all actions on secrets
   severity: :danger
@@ -378,7 +380,7 @@ Example whitelist below produces the following `placeholder_key => value` mappin
 The placeholder keys above, when used in the custom graph queries, will be replaced by their respective values upon Risk Rule evaluation.
 
 Example:
-```
+```yaml
 ---
 rules:
   global:                        # global scope - applies to all risk rule and cluster names
@@ -403,7 +405,7 @@ _Krane_ can be deployed to a local or remote Kubernetes clusters easily.
 
 ### K8s Pre-requisites
 
-Kubernetes namespace, service account along with appropriate RBAC must be present in the cluster. See the [Namespace](k8s/one-time/namespace.yaml) & [RBAC](k8s/one-time/rbac.yml) definitions for reference.
+Kubernetes namespace, service account along with appropriate RBAC must be present in the cluster. See the [Namespace](k8s/one-time/namespace.yaml) & [RBAC](k8s/one-time/rbac.yaml) definitions for reference.
 
 Default _Krane_ entrypoint executes [bin/in-cluster-run](bin/in-cluster-run) which waits for RedisGraph instance to become available before starting RBAC report loop and dashboard web server.
 
@@ -466,7 +468,7 @@ kubectl create \
 ```
 
 Note that _Krane_ dashboard services is not exposed by default!
-```
+```sh
 kubectl port-forward svc/krane 8000 \
   --context=docker-desktop \
   --namespace=krane
@@ -519,7 +521,7 @@ docker-compose down
 
 At this point you should be able to modify _Krane_ codebase and test results by invoking commands in local shell.
 
-```
+```sh
 ./bin/krane --help                    # to get help
 ./bin/krane report -k docker-desktop  # to generate your first report for
                                       # local docker-desktop k8s cluster
