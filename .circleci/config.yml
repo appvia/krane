@@ -122,8 +122,6 @@ workflows:
           filters:
             branches:
               ignore: master
-            tags:
-              ignore: /.*/
 
       - build_and_push:
           requires:
