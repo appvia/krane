@@ -114,7 +114,10 @@ workflows:
   version: 2
   run_build:
     jobs:
-      - test
+      - test:
+          filters:
+            tags:
+              only: /^v.*$/
 
       - build_only:
           requires:
@@ -122,6 +125,8 @@ workflows:
           filters:
             branches:
               ignore: master
+            tags:
+              ignore: /.*/
 
       - build_and_push:
           requires:
@@ -129,6 +134,8 @@ workflows:
           filters:
             branches:
               only: master
+            tags:
+              only: /^v\d+\.\d+\.\d+$/
 
       # - deploy:
       #     skaffold_kube_context: qa
