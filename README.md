@@ -2,6 +2,12 @@
 
 > Kubernetes RBAC Analysis made Easy
 
+![Stability:Beta](https://img.shields.io/badge/stability-beta-orange)
+![CircleCI](https://img.shields.io/circleci/build/github/appvia/krane/master)
+![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/appvia/krane)
+![License: Apache-2.0](https://img.shields.io/github/license/appvia/kore)
+![Docker Repository on Quay.io](https://quay.io/repository/appvia/krane/status)
+
 Krane is a simple Kubernetes RBAC static analysis tool. It identifies potential security risks in K8s RBAC design and makes suggestions on how to mitigate them. Krane dashboard presents current RBAC security posture and lets you navigate through its definition.
 
 ## Features
