@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+
+${require('./partials/_head.html')}
+
+<body id="page-top">
+
+  <!-- Page Wrapper -->
+  <div id="wrapper">
+
+    <!-- Sidebar -->
+    ${require('./partials/_sidebar.html')}
+    <!-- End of Sidebar -->
+
+    <!-- Content Wrapper -->
+    <div id="content-wrapper" class="d-flex flex-column">
+
+      <!-- Main Content -->
+      <div id="content">
+
+        <!-- Topbar -->
+        ${require('./partials/_topbar.html')}
+        <!-- End of Topbar -->
+
+        <!-- Begin Page Content container-fluid -->
+        <div class="container-fluid">
+          <!-- Page Heading -->
+          <div class="d-sm-flex align-items-center justify-content-between mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+          </div>
+
+          <div class="row">
+
+            <!-- Dangers Card -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Dangers detected</div>
+                      <div class="h3 mb-0 font-weight-bold text-gray-800" id="danger-count">0</div>
+                    </div>
+                    <div class="col-auto">
+                      <a href="danger.html" class="btn btn-danger btn-circle">
+                        <i class="fas fa-exclamation-circle"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Warnings Card -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Warnings detected</div>
+                      <div class="h3 mb-0 font-weight-bold text-gray-800" id="warning-count">0</div>
+                    </div>
+                    <div class="col-auto">
+                      <a href="warning.html" class="btn btn-warning btn-circle">
+                        <i class="fas fa-exclamation-triangle"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Infos Card -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Info available</div>
+                      <div class="h3 mb-0 font-weight-bold text-gray-800" id="info-count">0</div>
+                    </div>
+                    <div class="col-auto">
+                      <a href="info.html" class="btn btn-info btn-circle">
+                        <i class="fas fa-info-circle"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Success Card -->
+            <div class="col-xl-3 col-md-6 mb-4">
+              <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                  <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                      <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Successful checks</div>
+                      <div class="h3 mb-0 font-weight-bold text-gray-800" id="success-count">0</div>
+                    </div>
+                    <div class="col-auto">
+                      <a href="success.html" class="btn btn-success btn-circle">
+                        <i class="fas fa-check"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+
+          <!-- Content Row -->
+          <div class="row">
+
+            <!-- Summary box -->
+            <div class="col-xl-8 col-lg-7">
+              <div class="card shadow mb-4">
+                <!-- Card Header  -->
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Summary</h6>
+                </div>
+                <!-- Card Body -->
+                <div class="card-body">
+                  Cards above show how many risks have been detected in RBAC configuration.
+                  Navigate to each section for details and risk mitigation suggestions.
+
+                  <div class="my-3"></div>
+
+                  You may investigate K8s cluster RBAC futher by inspecting:</br>
+
+                  <div class="my-3"></div>
+                  <a href="tree.html" class="btn btn-light btn-icon-split">
+                    <span class="icon text-gray-600">
+                      <i class="fas fa-arrow-right"></i>
+                    </span>
+                    <span class="text">
+                      <i class="fas fa-fw fa-user-shield"></i>
+                      <span>RBAC Facets</span>
+                    </span>
+                  </a>
+                  <div class="my-2"></div>
+                  With RBAC Facets you can inspect various aspects of RBAC e.g. Namespaces, Actors (Subjects), associated Roles and Cluster Roles as well as Rerources. NOTE: Tree only shows roles which are in use i.e. assigned to a subject!
+
+                  <div class="my-4"></div>
+                  <a href="graph.html" class="btn btn-light btn-icon-split">
+                    <span class="icon text-gray-600">
+                      <i class="fas fa-arrow-right"></i>
+                    </span>
+                    <span class="text">
+                      <i class="fas fa-fw fa-project-diagram"></i>
+                      <span>RBAC Graph</span>
+                    </span>
+                  </a>
+                  <div class="my-2"></div>
+                  Presents simplified RBAC graph reduced to Namespaces, Actors and Roles attached to them. Graph will visually highlight orphan nodes.
+
+
+                </div>
+              </div>
+            </div>
+
+            <!-- Pie Chart -->
+            <div class="col-xl-4 col-lg-5">
+              <div class="card shadow mb-4">
+                <!-- Card Header  -->
+                <div class="card-header py-3">
+                  <h6 class="m-0 font-weight-bold text-primary">Security checks</h6>
+                </div>
+                 <!-- Card Body -->
+                <div class="card-body">
+                  <div class="chart-pie pt-4 pb-2">
+                    <canvas id="scanPieChart"></canvas>
+                  </div>
+                  <div class="mt-4 text-center small">
+                    <span class="mr-2">
+                      <i class="fas fa-circle text-danger"></i> Danger
+                    </span>
+                    <span class="mr-2">
+                      <i class="fas fa-circle text-warning"></i> Warning
+                    </span>
+                    <span class="mr-2">
+                      <i class="fas fa-circle text-info"></i> Info
+                    </span>
+                    <span class="mr-2">
+                      <i class="fas fa-circle text-success"></i> Success
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.container-fluid -->
+
+      </div>
+      <!-- End of Main Content -->
+
+      <!-- Footer -->
+      ${require('./partials/_footer.html')}
+      <!-- End of Footer -->
+
+    </div>
+    <!-- End of Content Wrapper -->
+
+  </div>
+  <!-- End of Page Wrapper -->
+
+  <!-- Scroll to Top Button-->
+  <a class="scroll-to-top rounded" href="#page-top">
+    <i class="fas fa-angle-up"></i>
+  </a>
+
+  ${require('./partials/_scripts.html')}
+  <!-- Page level plugins -->
+  <script src="vendor/chart.js/Chart.min.js"></script>
+  <!-- RBAC findings -->
+  <script src="js/rbac-findings.min.js"></script>
+</body>
+
+</html>

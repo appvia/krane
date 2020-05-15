@@ -1,0 +1,75 @@
+# Copyright 2020 Appvia Ltd <info@appvia.io>
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    io.appvia.krane/version: v0.1.0
+    io.appvia.krane.service: krane
+  name: krane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.appvia.krane.service: krane
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        io.appvia.krane.network/default: "true"
+        io.appvia.krane.service: krane
+    spec:
+      containers:
+      - command:
+        - /bin/bash
+        - -c
+        - bin/in-cluster-run
+        env:
+        - name: KRANE_REPORT_INTERVAL
+          value: "30"
+        - name: KRANE_REPORT_OUTPUT
+          value: none
+        - name: REDIS_GRAPH_HOST
+          value: redisgraph
+        - name: SLACK_WEBHOOK_URL
+          value: ""
+        - name: SLACK_CHANNEL
+          value: ""
+        image: quay.io/appvia/krane
+        imagePullPolicy: "IfNotPresent"
+        livenessProbe:
+          exec:
+            command:
+            - /bin/bash
+            - -c
+            - bin/krane --version
+          failureThreshold: 3
+          initialDelaySeconds: 20
+          periodSeconds: 60
+          timeoutSeconds: 5
+        name: krane
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            cpu: "1"
+            memory: "419430400"
+          requests:
+            cpu: 200m
+            memory: "20971520"
+      restartPolicy: Always
+      serviceAccountName: krane-sa
+      automountServiceAccountToken: true
+      volumes: null

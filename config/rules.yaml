@@ -1,103 +1,576 @@
 ---
+# ========================== MACROS ==========================
+#
+# Macros can specify shared / common attributes referenced by one or more risk rules below.
+# If you choose to use specific macro for a given risk rule please specifying `macro: <macro-name>` in rule definition.
+# Note: Attributes defined in macro will take precedence i.e. replace the same attributes defined on the rule level. 
+#
+# Macro can contain any of the following attributes:
+#
+# :query    - RedisGraph query (see README.md). Has precedence over :template. Requires :writer to be defined.
+# :writer   - Writer is a (Ruby) expression used to format :query result set. Writer has precedence over :template.
+# :template - Built-in query/writer template name. If :query & :writer are not specified then chosen 
+#             query generator will be used along with matching writer. See rule attributes below for more information.
+#
+macros:
+  # risky-role:
+  #   query:    # Shared GraphQL query
+  #   writer:   # Shared Writer expression (Ruby)  
+  #   template: # Shared built-in query/writer template
+
+
+# ========================== RULES ==========================
+#
+# Rule can contain any of the following attributes:
+
+# :id              - [Required] Rule id should be a unique
+# :group_title     - [Required] Title applying to all items falling under this risk check 
+# :severity        - [Required] Severity, as one of :danger, :warning, :info
+# :info            - [Required] Textual information about the check and suggestions on how to mitigate the risk
+# :query           - [Conditonal] RedisGraph query (see README.md). Has precedence over :template. Requires :writer to be defined.
+# :writer          - [Conditonal] Writer is a Ruby expression used to format query result set. Writer has precedence over :template. Required :query to be defined.
+# :template        - [Conditonal] Built-in query/writer template name. If :query & :writer are not specified then chosen 
+#                    query generator will be used along with matching writer. 
+#                    Some templates require `:match_rules` attribute to be specified on individual rule level in order to build correct query. 
+#                    Supported templates kinds:
+#                      - risky-role : Builds multi-match graph query based on the access rule specified in :match_rules.
+#                                     Attributes and values in :match_rule follow Kubernetes spec at:
+#                                       * https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-examples
+#                                     Generated graph query returns the following columns: 
+#                                       * role_name
+#                                       * role_kind
+#                                       * namespace_name (an array is returned if multiple items returned)
+# :match_rules     - [Conditonal] Required when :template relies on match rules in order to build a query.
+#                    Example:
+#                      match_rules:
+#                      - resources: ['cronjobs']
+#                        verbs: ['update']
+
+# :custom_params   - List of custom key-value pairs to be replaced in resolved :query / :writer.
+#                    Example: 
+#                      custom_params:
+#                      - attrA: valueA
+#                      - attrB: valueB
+
+#                    Templated placeholders for keys above `{{attrA}}` and `{{attrB}}` will be replaced with `valueA` and `valueB` respectively.
+
+# :threshold       - [Optional] Numeric value. When definied this will become available as templated placeholder `{{threshold}}` in writer expression.
+# :macro           - [Optional] Reference to common parameters set defined in a named macro
+# :disabled        - [Optional] When set to `true` it'll disable given rule and exclude it from evaluation. 
+#                    By default all rules are enabled.
+#
 rules:
-- group_title: "Subjects with privileged PSP access not scoped to a namespace"
+#
+# ==== Begin Example Rule ====
+#
+- id: example-rule
+  group_title: Example rule
   severity: :danger
-  info: "Subjects below are able to run privileged containers and are not scoped to a particular namespace. This might be potential security risk!"
-  query: |
-    MATCH (p:Psp)-[:SECURITY]->(r:Rule)<-[:GRANT]-(ro:Role)<-[:ASSIGN]-(s:Subject)
-    WHERE p.privileged='true' AND p.name != 'kube-system' AND (s.namespace = '' OR s.namespace = NULL) AND ro.defined = true
-    RETURN p.name as psp_name, s.kind as subject_kind, s.name as subject_name
-  writer: |
-    "psp: #{r[:psp_name]} - #{r[:subject_kind]} #{r[:subject_name]}"
+  info: Risk description and instructions on how to mitigate it goes here
+  query: | # Example query: match all subjects and associated namespaces to which subject has access to
+    MATCH 
+      (s:Subject)-[:ACCESS]->(ns:Namespace)
+    RETURN 
+      s.kind as subject_kind,
+      s.name as subject_name,
+      COLLECT(ns.name) as namespace_names
+    ORDER BY 
+      subject_kind, 
+      subject_name, 
+      namespace_names DESC
+  threshold: 2 # threshold used in writer to limit items to those with at least 2 namespaces
+  writer: | # Ruby code snippet, last expression will be captured as formatted result item output
+    if result.namespace_names.count >= {{threshold}}
+      "#{result.subject_kind} #{result.subject_name} can access namespaces: #{result.namespace_names.join(', ')}"
+    end
+  disabled: true # This is just an example rule
+#
+# ==== End Example Rule ====
+#
 
-- group_title: "Subjects with open cluster-wide access"
+- id: subjects-with-privileged-psp-not-scoped-to-ns
+  group_title: Subjects with privileged PSP access NOT scoped to a namespace
+  severity: :danger
+  info: |
+    Subjects below are able to run privileged containers and are NOT scoped to a particular namespace.
+    Review PSP policies and limit subject's access to specific namespaces.
+  template: privileged-psp-subjects
+
+- id: subjects-with-open-cluster-wide-access
+  group_title: Subjects with too open cluster-wide access
+  severity: :danger
+  info: |
+    Subjects below have URESTRICTED cluster-wide access to ALL resources (apiGroups: *, core)! This is potentially dangeroud.
+    Review RBAC associated with items below and limit access to required namespaces only.
+  template: unrestricted-cluster-wide-subjects
+
+- id: subjects-with-open-ns-level-access
+  group_title: Subjects with too open namespace level access
   severity: :warning
-  info: "Subjects with * access to * resources (apiGroups: *, core) in the context of an entire cluster. This might be potential security risk!"
-  query: |
-    MATCH (r:Rule)<-[:GRANT]-(ro:Role)<-[:ASSIGN]-(s:Subject) 
-    WHERE ((r.api_group = '*' OR r.api_group = 'core')  AND (r.resource = '*' OR r.url = '*') AND r.verb = '*') 
-    AND (s.namespace = '' OR s.namespace = NULL) AND ro.defined = true
-    RETURN r.api_group as rule_api_group, r.type as rule_type, r.resource as rule_resource, r.url as rule_url, r.verb as rule_verb,
-    s.kind as subject_kind, s.name as subject_name
-    ORDER BY subject_name,subject_kind
-  writer: |
-    txt = r[:rule_type] == 'resource' ? 'resources' : 'non-resource URLs'
-    "#{r[:subject_kind]} #{r[:subject_name]} has * access to * #{txt} (apiGroup: #{r[:rule_api_group]})"
+  info: |
+    Subjects below have URESTRICTED access to ALL resources (apiGroups: *, core) within the scope of a namespace.
+    This might be potential security risk. Review RBAC associated with items below and replace wildcard access with 
+    more specific access rules.
+  template: unrestricted-ns-level-subjects
 
-- group_title: "Subjects with open namespace level access"
+- id: subjects-with-rbac-management
+  group_title: Subjects with ability to manage RBAC
   severity: :warning
-  info: "Subjects with * access to * resources (apiGroups: *, core) within the scope of a namespace. This might be potential security risk."
-  query: |
-    MATCH (r:Rule)<-[:GRANT]-(ro:Role)<-[:ASSIGN]-(s:Subject) 
-    WHERE ((r.api_group = '*' OR r.api_group = 'core')  AND (r.resource = '*' OR r.url = '*') AND r.verb = '*') 
-      AND s.namespace != '' AND ro.defined = true
-    RETURN r.api_group as rule_api_group, r.type as rule_type, r.resource as rule_resource, r.url as rule_url, r.verb as rule_verb,
-      s.kind as subject_kind, s.name as subject_name, s.namespace as subject_namespace
-    ORDER BY subject_namespace, subject_name, subject_kind
-  writer: |
-    txt = r[:rule_type] == 'resource' ? 'resources' : 'non-resource URLs'
-    "#{r[:subject_kind]} #{r[:subject_name]} has * access to * #{txt} (apiGroup: #{r[:rule_api_group]}) in #{r[:subject_namespace]} namespace"
+  info: |
+    List of Subjects able to create Roles and/or RoleBindings. This might be potential security risk.
+    Review RBAC associated with items below and consider revoking unnecessary privileges.
+  template: rbac-managing-subjects
 
-- group_title: "Subjects with ability to manage RBAC"
+- id: subjects-with-non-existing-roles
+  group_title: Subjects associated with non-existing roles
   severity: :warning
-  info: "List of Subjects who can manage Roles and RoleBindings. This might be potential security risk."
-  query: |
-    MATCH (s:Subject)-[:ASSIGN]->(ro:Role)-[:GRANT]->(r:Rule) 
-    WHERE ro.defined = true 
-      AND (r.verb = 'create' OR r.verb = '*') 
-      AND (r.api_group = 'rbac.authorization.k8s.io' OR r.api_group = '*') 
-      AND (r.resource = 'roles' OR r.resource = 'rolebindings' OR r.resource = '*')
-    RETURN s.kind as subject_kind, s.name as subject_name, s.namespace as subject_namespace
-    ORDER BY subject_kind, subject_name DESC
-  writer: |
-    ns = r[:subject_namespace].blank? ? 'Cluster-Wide' : "in #{r[:subject_namespace]} namespace"
-    "#{r[:subject_kind]} #{r[:subject_name]} (#{ns})"
+  info: |
+    List of Subjects with Role or ClusterRole which hasn't been defined. 
+    Review and check whether Role/ClusterRole should exist.
+  template: undefined-role-subjects
 
-- group_title: "Subjects associated with non-existing roles"
-  severity: :warning
-  info: "List of Subjects with Role or ClusterRole which hasn't been defined. Check whether this Role should exist."
-  query: |
-    MATCH (s:Subject)-[:ASSIGN]->(r:Role)
-    WHERE r.defined = false
-    RETURN r.kind as role_kind, r.name as role_name, s.kind as subject_kind, 
-      s.name as subject_name, s.namespace as subject_namespace
-    ORDER BY subject_namespace, subject_name, subject_kind
-  writer: |
-    "#{r[:subject_kind]} #{r[:subject_name]} is bound to non-existing #{r[:role_kind]} #{r[:role_name]}"
-
-- group_title: "Dangling roles (not bound to any subject)"
-  severity: info
-  info: "List of roles that are defined however not assigned to any of the Subjects. Is this Role/ClusteRole needed?"
-  query: |
-    MATCH (r:Role)-[:ASSIGN]->(s:Subject) 
-    WHERE r.defined = true AND s.name = NULL
-    RETURN r.kind as role_kind, r.name as role_name
-    ORDER BY role_kind, role_name
-  writer: |
-    "#{r[:role_kind]} #{r[:role_name]} is not bound to any Subject(s)"
-
-- group_title: "Subjects associated with multiple roles"
-  severity: :info
-  info: "List of Subjects associated with multiple roles. This may indicate a bad RBAC design. Consider role aggregation."
-  query: |
-    MATCH (s:Subject)-[:ASSIGN]->(r:Role)
-    WHERE r.defined = true
-    RETURN count(r) as role_count, s.kind as subject_kind, s.name as subject_name, s.namespace as subject_namespace
-    ORDER BY role_count, subject_namespace, subject_name, subject_kind DESC
-  threshold: 4
-  writer: |   
-    "#{r[:subject_kind]} #{r[:subject_name]} referenced by #{r[:role_count].to_i} roles" if r[:role_count].to_i >= threshold
-
-- group_title: "Namespaces with multiple subjects"
+- id: subjects-with-many-roles
+  group_title: Subjects associated with multiple roles
   severity: :info
   info: |
-    List of Namespaces with multiple subjects. Sagnificant number of Subjects having access 
-    to Namespace might indicate bad design or potential security risk.
-  query: |
-    MATCH (s:Subject) 
-    RETURN count(s.name) as subject_count, s.namespace as subject_namespace
-    ORDER BY subject_count, subject_namespace DESC
+    List of Subjects associated with multiple roles. Dependng on complexity this may indicate a bad RBAC design. 
+    Consider role aggregation.
+  template: multiple-role-subjects
+  threshold: 4
+
+- id: namespaces-with-many-subjects
+  group_title: Namespaces with multiple subjects
+  severity: :info
+  info: |
+    List of Namespaces with multiple subject access. Significant number of Subjects having access 
+    to a Namespace might indicate bad design or potential security risk. Review namespaces below.
+  template: multiple-subject-namespaces
   threshold: 5
-  writer: |
-    ns = r[:subject_namespace].empty? ? 'CLUSTER-WIDE' : "#{r[:subject_namespace]} namespace"
-    "#{ns} allows #{r[:subject_count].to_i} subject(s)" if r[:subject_count].to_i >= threshold
+
+# Secrets list / get
+
+- id: risky-get-secrets
+  group_title: Risky Roles/ClusterRoles allowing wiewing specific secrets
+  severity: :warning
+  info: Roles/ClusterRoles allowing to view specific secrets. This can be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['secrets']
+    verbs: ['get']
+
+- id: risky-list-secrets
+  group_title: Risky Roles/ClusterRoles allowing listing of all secrets
+  severity: :warning
+  info: Roles/ClusterRoles allowing to list all secrets. This can be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['secrets']
+    verbs: ['list']
+
+# Impersonation
+
+- id: risky-impersonate-privileged-groups
+  group_title: Risky Roles/ClustersRoles allowing to impersonate privileged groups (like 'system:masters')
+  severity: :danger
+  info: Roles/ClusterRoles allowing to impersonate privileged groups. This is dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['groups']
+    verbs: ['impersonate']
+
+# All actions (*) on specific resource
+
+- id: risky-any-verb-secrets
+  group_title: Risky Roles/ClustersRoles allowing all actions on secrets
+  severity: :danger
+  info: Roles/ClusterRoles allowing all actions on secrets. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['secrets']
+    verbs: ['*']
+
+- id: risky-any-verb-pods
+  group_title: Risky Roles/ClustersRoles allowing all actions on pods
+  severity: :danger
+  info: Roles/ClusterRoles allowing all actions on pods. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['pods']
+    verbs: ['*']
+
+- id: risky-any-verb-deployments
+  group_title: Risky Roles/ClustersRoles allowing all actions on deployments
+  severity: :danger
+  info: Roles/ClusterRoles allowing all actions on deployments. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['deployments']
+    verbs: ['*']
+
+- id: risky-any-verb-daemonsets
+  group_title: Risky Roles/ClustersRoles allowing all actions on daemonsets
+  severity: :danger
+  info: Roles/ClusterRoles allowing all actions on daemonsets. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['daemonsets']
+    verbs: ['*']
+
+- id: risky-any-verb-statefulsets
+  group_title: Risky Roles/ClustersRoles allowing all actions on statefulsets
+  severity: :danger
+  info: Roles/ClusterRoles allowing all actions on statefulsets. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['statefulsets']
+    verbs: ['*']
+
+- id: risky-any-verb-replicationcontrollers
+  group_title: Risky Roles/ClustersRoles allowing all actions on replicationcontrollers
+  severity: :danger
+  info: Roles/ClusterRoles allowing all actions on replicationcontrollers. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['replicationcontrollers']
+    verbs: ['*']
+
+- id: risky-any-verb-replicasets
+  group_title: Risky Roles/ClustersRoles allowing all actions on replicasets
+  severity: :danger
+  info: Roles/ClusterRoles allowing all actions on replicasets. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['replicasets']
+    verbs: ['*']
+
+- id: risky-any-verb-cronjobs
+  group_title: Risky Roles/ClustersRoles allowing all actions on cronjobs
+  severity: :danger
+  info: Roles/ClusterRoles allowing all actions on cronjobs. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['cronjobs']
+    verbs: ['*']
+
+- id: risky-any-verb-jobs
+  group_title: Risky Roles/ClustersRoles allowing all actions on jobs
+  severity: :danger
+  info: Roles/ClusterRoles allowing all actions on jobs. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['jobs']
+    verbs: ['*']
+
+- id: risky-any-verb-roles
+  group_title: Risky Roles/ClustersRoles allowing all actions on roles
+  severity: :danger
+  info: Roles/ClusterRoles allowing all actions on roles. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['roles']
+    verbs: ['*']
+
+- id: risky-any-verb-clusterroles
+  group_title: Risky Roles/ClustersRoles allowing all actions on clusterroles
+  severity: :danger
+  info: Roles/ClusterRoles allowing all actions on clusterroles. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['clusterroles']
+    verbs: ['*']
+
+- id: risky-any-verb-rolebindings
+  group_title: Risky Roles/ClustersRoles allowing all actions on rolebindings
+  severity: :danger
+  info: Roles/ClusterRoles allowing all actions on rolebindings. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['rolebindings']
+    verbs: ['*']
+
+- id: risky-any-verb-clusterrolebindings
+  group_title: Risky Roles/ClustersRoles allowing all actions on clusterrolebindings
+  severity: :danger
+  info: Roles/ClusterRoles allowing all actions on clusterrolebindings. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['clusterrolebindings']
+    verbs: ['*']
+
+- id: risky-any-verb-users
+  group_title: Risky Roles/ClustersRoles allowing all actions on users
+  severity: :danger
+  info: "Roles/ClusterRoles allowing all actions on users. This might be dangerous. Review listed Roles!"
+  template: risky-role
+  match_rules:
+  - resources: ['users']
+    verbs: ['*']
+
+- id: risky-any-verb-groups
+  group_title: Risky Roles/ClustersRoles allowing all actions on groups
+  severity: :danger
+  info: Roles/ClusterRoles allowing all actions on groups. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['groups']
+    verbs: ['*']
+
+# Specific action on all (*) resources
+
+- id: risky-any-resource-delete
+  group_title: Risky Roles/ClustersRoles allowing delete action on all resources
+  severity: :danger
+  info: Roles/ClusterRoles allowing delete action on all resources. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['*']
+    verbs: ['delete']
+
+- id: risky-any-resource-deletecollection
+  group_title: Risky Roles/ClustersRoles allowing deletecollection action on all resources
+  severity: :danger
+  info: Roles/ClusterRoles allowing deletecollection action on all resources. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['*']
+    verbs: ['deletecollection']
+
+- id: risky-any-resource-create
+  group_title: Risky Roles/ClustersRoles allowing create action on all resources
+  severity: :danger
+  info: Roles/ClusterRoles allowing create action on all resources. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['*']
+    verbs: ['create']
+
+- id: risky-any-resource-list
+  group_title: Risky Roles/ClustersRoles allowing list action on all resources
+  severity: :danger
+  info: Roles/ClusterRoles allowing list action on all resources. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['*']
+    verbs: ['list']
+
+- id: risky-any-resource-get
+  group_title: Risky Roles/ClustersRoles allowing get action on all resources
+  severity: :danger
+  info: Roles/ClusterRoles allowing get action on all resources. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['*']
+    verbs: ['get']
+
+- id: risky-any-resource-impersonate
+  group_title: Risky Roles/ClustersRoles allowing impersonate action on all resources
+  severity: :danger
+  info: Roles/ClusterRoles allowing impersonate action on all resources. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['*']
+    verbs: ['impersonate']
+
+# Malicious pod
+
+- id: risky-create-deployments
+  group_title: Risky Roles/ClustersRoles allowing to create a potentially malicious pod
+  severity: :warning
+  info: Roles/ClusterRoles allowing to create a potentially malicious pod. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['deployments']
+    verbs: ['create']
+
+- id: risky-update-deployments
+  group_title: Risky Roles/ClustersRoles allowing to update a potentially malicious pod
+  severity: :warning
+  info: Roles/ClusterRoles allowing to update a potentially malicious pod. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['deployments']
+    verbs: ['update']
+
+- id: risky-create-daemonsets
+  group_title: Risky Roles/ClustersRoles allowing to create a potentially malicious daemonset
+  severity: :warning
+  info: Roles/ClusterRoles allowing to create a potentially malicious daemonsets. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['daemonsets']
+    verbs: ['create']
+
+- id: risky-update-daemonsets
+  group_title: Risky Roles/ClustersRoles allowing to update a potentially malicious daemonset
+  severity: :warning
+  info: Roles/ClusterRoles allowing to update a potentially malicious daemonsets. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['daemonsets']
+    verbs: ['update']
+
+- id: risky-create-statefulsets
+  group_title: Risky Roles/ClustersRoles allowing to create a potentially malicious statefulsets
+  severity: :warning
+  info: Roles/ClusterRoles allowing to create a potentially malicious statefulsets. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['statefulsets']
+    verbs: ['create']
+
+- id: risky-update-statefulsets
+  group_title: Risky Roles/ClustersRoles allowing to update a potentially malicious statefulsets
+  severity: :warning
+  info: Roles/ClusterRoles allowing to update a potentially malicious statefulsets. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['statefulsets']
+    verbs: ['update']
+
+- id: risky-create-replicationcontrollers
+  group_title: Risky Roles/ClustersRoles allowing to create a potentially malicious replicationcontrollers
+  severity: :warning
+  info: Roles/ClusterRoles allowing to create a potentially malicious replicationcontrollers. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['replicationcontrollers']
+    verbs: ['create']
+
+- id: risky-update-replicationcontrollers
+  group_title: Risky Roles/ClustersRoles allowing to update a potentially malicious replicationcontrollers
+  severity: :warning
+  info: Roles/ClusterRoles allowing to update a potentially malicious replicationcontrollers. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['replicationcontrollers']
+    verbs: ['update']
+
+- id: risky-create-replicasets
+  group_title: Risky Roles/ClustersRoles allowing to create a potentially malicious replicasets
+  severity: :warning
+  info: Roles/ClusterRoles allowing to create a potentially malicious replicasets. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['replicasets']
+    verbs: ['create']
+
+- id: risky-update-replicasets
+  group_title: Risky Roles/ClustersRoles allowing to update a potentially malicious replicasets
+  severity: :warning
+  info: Roles/ClusterRoles allowing to update a potentially malicious replicasets. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['replicasets']
+    verbs: ['update']
+
+- id: risky-create-jobs
+  group_title: Risky Roles/ClustersRoles allowing to create a potentially malicious jobs
+  severity: :warning
+  info: Roles/ClusterRoles allowing to create a potentially malicious jobs. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['jobs']
+    verbs: ['create']
+
+- id: risky-update-jobs
+  group_title: Risky Roles/ClustersRoles allowing to update a potentially malicious jobs
+  severity: :warning
+  info: Roles/ClusterRoles allowing to update a potentially malicious jobs. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['jobs']
+    verbs: ['update']
+
+- id: risky-create-cronjobs
+  group_title: Risky Roles/ClustersRoles allowing to create a potentially malicious cronjobs
+  severity: :warning
+  info: Roles/ClusterRoles allowing to create a potentially malicious cronjobs. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['cronjobs']
+    verbs: ['create']
+
+- id: risky-update-cronjobs
+  group_title: Risky Roles/ClustersRoles allowing to update a potentially malicious cronjobs
+  severity: :warning
+  info: Roles/ClusterRoles allowing to update a potentially malicious cronjobs. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['cronjobs']
+    verbs: ['update']
+
+# Multiple permissions simulaneously
+
+- id: risky-create-rolebinding-role
+  group_title: Risky Roles/ClustersRoles allowing creation of rolebinding and associate privileged role to itself
+  severity: :warning
+  info: Roles able to create bindings referencing roles. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - apiGroups: ['rbac.authorization.k8s.io']
+    resources: ['rolebindings']
+    verbs: ['create']
+  - apiGroups: ['rbac.authorization.k8s.io']
+    resources: ['roles']
+    verbs: ['bind']
+
+- id: risky-create-rolebinding-clusterrole
+  group_title: Risky Roles/ClustersRoles allowing creation of rolebinding and associate privileged clusterrole to itself
+  severity: :warning
+  info: Roles able to create bindings referencing cluster roles. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - apiGroups: ['rbac.authorization.k8s.io']
+    resources: ['rolebindings']
+    verbs: ['create']
+  - apiGroups: ['rbac.authorization.k8s.io']
+    resources: ['clusterroles']
+    verbs: ['bind']
+
+- id: risky-create-clusterrolebinding-clusterrole
+  group_title: Risky Roles/ClustersRoles allowing creation of clusterrolebinding and associate privileged clusterrole to itself
+  severity: :warning
+  info: Roles able to create cluster role bindings. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - apiGroups: ['rbac.authorization.k8s.io']
+    resources: ['clusterrolebindings']
+    verbs: ['create']
+  - apiGroups: ['rbac.authorization.k8s.io']
+    resources: ['clusterroles']
+    verbs: ['bind']
+
+# Pod exec / attach
+
+- id: risky-exec-pods
+  group_title: Risky Roles/ClustersRoles allowing shell on pods
+  severity: :danger
+  info: Roles allow exec into running container. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['pods/exec']
+    verbs: ['create']
+  - resources: ['pods']
+    verbs: ['get']
+
+- id: risky-attach-pods 
+  group_title: Risky Roles/ClustersRoles allowing attaching pod and view all its logs in realtime
+  severity: :danger
+  info: Roles allow attaching to a running container. This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['pods/attach']
+    verbs: ['create']
+  - resources: ['pods']
+    verbs: ['get']
+
+# Low priority
+
+- id: risky-add-rolebinding
+  group_title: Risky Roles/ClustersRoles allowing users in a rolebinding to add other users to their rolebindings
+  severity: :warning
+  info: This might be dangerous. Review listed Roles!
+  template: risky-role
+  match_rules:
+  - resources: ['rolebindings']
+    verbs: ['patch', 'get']

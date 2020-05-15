@@ -1,14 +1,28 @@
 #!/usr/bin/env ruby
 
-require "bundler/setup"
-require "rbac_visualiser"
+# Copyright 2020 Appvia Ltd <info@appvia.io>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-# You can add fixtures and/or initialization code here to make experimenting
-# with your gem easier. You can also use a different console, if you like.
+require 'bundler/setup'
+
+require 'vendor'
+require 'krane'
+require 'cli'
 
 # (If you use this, don't forget to add pry to your Gemfile!)
 # require "pry"
 # Pry.start
 
-require "irb"
+require 'irb'
 IRB.start(__FILE__)

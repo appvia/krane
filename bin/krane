@@ -1,0 +1,111 @@
+#!/usr/bin/env ruby
+
+# Copyright 2020 Appvia Ltd <info@appvia.io>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Krane executable. Run `./bin/krane help`
+
+require 'rubygems'
+require 'bundler'
+stages = [:default]
+stages << :development if ENV.fetch('KRANE_ENV', 'development') == 'development'
+Bundler.setup(*stages)
+
+require 'vendor'
+require 'commander'
+require 'krane'
+require 'cli'
+
+class CLI
+  include Commander::Methods
+  include Cli::Helpers
+  include Krane::Helpers
+
+  DEFAULT_CLUSTER_NAME   = 'default'
+  DEFAULT_DASHBOARD_PORT = 8000
+  DEFAULT_REPORT_OUTPUT  = :json
+
+  def run
+    program :name, 'krane'
+    program :version, Krane::VERSION
+    program :description, 'Kubernetes RBAC static analysis & visualisation tool'
+    program :help, 'Author', 'Marcin Ciszak <marcin.ciszak@appvia.io> - Appvia Ltd <appvia.io>'
+
+    never_trace! unless ENV.fetch('KRANE_ENV', 'development') == 'development'
+
+    default_command :help
+
+    command :report do |c|
+      c.syntax = 'krane report [options]'
+      c.summary = 'Run K8s RBAC report'
+      c.description = 'Generates K8s RBAC static analysis report for given cluster'
+      c.example 'to run report in a K8s cluster', 'krane report --incluster'
+      c.example 'to run report from local cache directory', 'krane report --dir </path/to/rbac/cache>'
+      c.example 'to run report for remote cluster with kube context', 'krane report --kubecontext <context>'
+      c.option '-c', '--cluster [CLUSTER NAME]', String, "Cluster name. Default: #{DEFAULT_CLUSTER_NAME}"
+      c.option '-o', '--output [OUTPUT]', String, "(json|yaml|none) Default: #{DEFAULT_REPORT_OUTPUT}"
+      c.option '-d', '--dir [PATH]', String, 'Path to local RBAC yaml files (roles, rolebinding, clusterroles, clusterrolebinding, psps)'
+      c.option '-k', '--kubecontext [CONTEXT]', String, 'Kube config context name for fetching RBAC from running cluster. This is alternative to loading RBAC from the local filesystem.'
+      c.option '--incluster', 'In-cluster RBAC scan. This takes presedence over -d and -k options.'
+      c.option '--ci', 'Enables CI mode. Errors in the report will cause program to exit with error code.'
+      c.option '--noindex', 'Disable RBAC indexing in the Graph'
+      c.option '--verbose', 'Makes output verbose'
+      c.option '--debug', 'Enabled debugging'
+      c.action do |args, options|
+        options.default cluster: DEFAULT_CLUSTER_NAME
+        options.default output: DEFAULT_REPORT_OUTPUT
+        options.default dir: nil
+        options.default kubecontext: nil
+        options.default local: false
+        options.default ci: false
+        options.default incluster: false
+        options.default noindex: false
+        options.default verbose: false
+        options.default debug: false
+
+        banner :info, 'This may take several seconds to complete...'
+
+        raise_on_cluster_missing options
+        raise_on_missing_path_or_context options
+
+        Cli::Commands.report(options)
+      end
+    end
+
+    command :dashboard do |c|
+      c.syntax = 'krane dashboard [options]'
+      c.summary = 'Start K8s RBAC dashboard server'
+      c.description = 'Starts Kubernetes RBAC Visualisation dashboard server'
+      c.example 'to start dashboard server', 'krane dashboard'
+      c.example 'to start server on a specific port', 'krane dashboard --port <8080>'
+      c.option '-c', '--cluster [CLUSTER NAME]', String, 'Cluster name. Default: default'
+      c.option '-p', '--port [PORT]', Integer, 'Dahboard UI custom port. Default: 8000'
+      c.option '--verbose', 'Makes output verbose'
+      c.action do |args, options|
+        options.default cluster: DEFAULT_CLUSTER_NAME
+        options.default port: DEFAULT_DASHBOARD_PORT
+
+        raise_on_cluster_missing options
+        raise_on_cluster_report_missing options
+
+        Cli::Commands.dashboard(options)
+      end
+    end
+
+    run!
+  end
+
+end
+
+CLI.new.run if $0 == __FILE__

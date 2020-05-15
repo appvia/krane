@@ -1,8 +1,0 @@
-require 'rbac_visualiser/graph'
-require 'rbac_visualiser/helpers'
-require 'rbac_visualiser/ingest'
-require 'rbac_visualiser/report_element'
-require 'rbac_visualiser/report'
-require 'rbac_visualiser/tree_element'
-require 'rbac_visualiser/tree'
-require 'rbac_visualiser/version'
