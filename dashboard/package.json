@@ -22,7 +22,7 @@
         "express": "4.17.1",
         "@fortawesome/fontawesome-free": "5.10.2",
         "patternfly-bootstrap-treeview": "2.1.10",
-        "jquery": "3.4.1",
+        "jquery": ">=3.5.0",
         "jquery.easing": "^1.4.1",
         "keycharm": "^0.2.0",
         "@popperjs/core": "2.0.6",
