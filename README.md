@@ -528,7 +528,9 @@ At this point you should be able to modify _Krane_ codebase and test results by 
 
 To enable Dashboard UI local development mode
 ```
-cd dashboard/ && npm start
+cd dashboard
+npm install
+npm start
 ```
 
 This will automatically start the Dashboard server, open default browser and watch for source files changes.
