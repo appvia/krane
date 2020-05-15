@@ -15,8 +15,10 @@
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 
 require 'app_helper'
+require 'simplecov'
+SimpleCov.start
 
-ENV['RBACVIS_ENV'] = 'test'
+ENV['KRANE_ENV'] = 'test'
 
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate
