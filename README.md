@@ -4,25 +4,25 @@
 
 ![Stability:Beta](https://img.shields.io/badge/stability-beta-orange)
 ![CircleCI](https://img.shields.io/circleci/build/github/appvia/krane/master)
-![GitHub tag (latest SemVer)](https://img.shields.io/github/v/tag/appvia/krane)
+![GitHub tag (latest SemVer)](https://img.shields.io/github/v/release/appvia/krane)
 ![License: Apache-2.0](https://img.shields.io/github/license/appvia/kore)
-![Docker Repository on Quay.io](https://quay.io/repository/appvia/krane/status)
+![Docker Repository on Quay.io](https://img.shields.io/badge/container-ready-brightgreen)
 
-Krane is a simple Kubernetes RBAC static analysis tool. It identifies potential security risks in K8s RBAC design and makes suggestions on how to mitigate them. Krane dashboard presents current RBAC security posture and lets you navigate through its definition.
+_Krane_ is a simple Kubernetes RBAC static analysis tool. It identifies potential security risks in K8s RBAC design and makes suggestions on how to mitigate them. _Krane_ dashboard presents current RBAC security posture and lets you navigate through its definition.
 
 ## Features
 
 - **RBAC Risk rules** - _Krane_ evaluates a set of built-in RBAC risk rules. These can be modified or extended with a set of custom rules.
 - **Portability** - _Krane_ can run in one of the following modes:
-  * Locally as a CLI or docker container.
+  * Locally as a CLI or [docker container](https://quay.io/repository/appvia/krane?tab=tags).
   * In CI/CD pipelines as a step action detecting potential RBAC flaws before it gets applied to the cluster.
   * As a standalone service continuously analysing state of RBAC within a Kubernetes cluster.
 - **Reporting** - _Krane_ produces easy to understand RBAC risk report in machine-readable format.
 - **Dashboard** - _Krane_ comes with a simple Dashboard UI helping you understand in-cluster RBAC design. Dashboard presents high-level overview of RBAC security posture and highlights detected risks. It also allows for further RBAC controls inspection via faceted tree and graph network views.
-- **Alerting** - It will alert and notify about detected medium and high severity risks via its Slack integration.
-- **RBAC in the Graph** - _Krane_ indexes entirety of Kubernets RBAC in a local Graph database which makes any further ad-hoc interrogating of RBAC information easy, with arbitrary CypherQL queries.
+- **Alerting** - It will alert on detected medium and high severity risks via its Slack integration.
+- **RBAC in the Graph** - _Krane_ indexes entirety of Kubernets RBAC in a local Graph database which makes any further ad-hoc interrogating of RBAC data easy, with arbitrary CypherQL queries.
 
-## Contents short
+## Contents
 
 - [Local Quick Start](#local-quick-start)
 - [Usage Guide](#usage-guide)
@@ -39,7 +39,7 @@ Krane is a simple Kubernetes RBAC static analysis tool. It identifies potential 
 
 Get started locally with Docker Compose.
 
-### Pre-requisites
+### Prerequisites
 
 It is assumed that you have [docker](https://docs.docker.com/get-docker/) running on your local machine. Install [docker-compose](https://docs.docker.com/compose/install/#install-compose) if you haven't already.
 
@@ -51,9 +51,9 @@ Krane depends on RedisGraph. `docker-compose` stack defines all what's required 
 docker-compose up -d
 ```
 
-_Krane_ docker image will be pre-build automatically if not already present.
+_Krane_ docker image will be pre-built automatically if not already present on local machine.
 
-Note that when running `docker-compose` locally, _Krane_ won't start RBAC _report_ and _dashboard_ automatically. Instead, the container will sleep (for 24h by default - this value can be adjusted in docker-compose.override.yml). Exec into a running _Krane_ container to run commands. Local `docker-compose` will also mount kube config (`~/.kube/config`) inside the container so you can run reports against any Kubernetes clusters to which you already have access to.
+Note that when running `docker-compose` locally, _Krane_ won't start RBAC _report_ and _dashboard_ automatically. Instead, the container will sleep for 24h by default - this value can be adjusted in `docker-compose.override.yml`. Exec into a running _Krane_ container to run commands. Local `docker-compose` will also mount kube config (`~/.kube/config`) inside the container enabling you to run reports against any Kubernetes clusters to which you already have access to.
 
 ```sh
 # Exec into a running Krane container
@@ -65,7 +65,7 @@ docker-compose exec krane bash
 $ krane -h
 ```
 
-To inspect what services are running and see associated ports:
+To inspect what services are running and the associated ports:
 ```
 docker-compose ps
 ```
@@ -121,7 +121,7 @@ To run a report against a running cluster you must provide a _kubectl_ context
 krane report -k <context>
 ```
 
-You may also pass `-c <cluster-name>` flag if you plan to run the tool against multiple different clusters and index RBAC graph separately for each cluster name.
+You may also pass `-c <cluster-name>` flag if you plan to run the tool against multiple clusters and index RBAC graph separately for each cluster name.
 
 #### From RBAC files stored in directory
 
@@ -129,7 +129,7 @@ To run a report against local RBAC yaml/json files, provide a directory path
 ```
 krane report -d </path/to/rbac-directory>
 ```
-NOTE: _Krane_ expects the following files (in either YAML or JSON format) to be present in provided directory path:
+NOTE: _Krane_ expects the following files (in either YAML or JSON format) to be present in specified directory path:
   - psp
   - roles
   - clusterroles
@@ -138,19 +138,21 @@ NOTE: _Krane_ expects the following files (in either YAML or JSON format) to be 
 
 #### Inside a Kubernetes cluster
 
-To run report in-cluster
+To run a report from a container running in Kubernetes cluster
 ```
 krane report --incluster
 ```
-NOTE: Service account used by _Krane_ will require access to RBAC resources. See required [RBAC](k8s/one-time/rbac.yaml).
+NOTE: Service account used by _Krane_ will require access to RBAC resources. See [Prerequisites](k8s/one-time/prerequisites.yaml) for details.
 
 #### In CI/CD pipeline
 
-To validate RBAC definition as step in CI/CD pipeline
+To validate RBAC definition as a step in CI/CD pipeline
 ```
 krane report --ci -d </path/to/rbac-directory>
 ```
-NOTE: _Krane_ expects certain naming convention to be followed for locally stored RBAC resource files. See [section](#from-rbac-files-stored-in-the-filesystem) above. In order to run `krane` command it's recommended that CI executor references [quay.io/appvia/krane:latest](https://quay.io/repository/appvia/krane?tab=tags) docker image.
+NOTE: _Krane_ expects certain naming convention to be followed for locally stored RBAC resource files. See [section](#from-rbac-files-stored-in-the-filesystem) above. In order to run `krane` commands it's recommended that CI executor references [quay.io/appvia/krane:latest](https://quay.io/repository/appvia/krane?tab=tags) docker image.
+
+CI mode is enabled by `--ci` flag. _Krane_ will return non zero status code along with details of breaking risk rules when one or more dangers have been detected.
 
 ### Visualisation Dashboard
 
@@ -161,7 +163,7 @@ krane dashboard
 
 Cluster flag `-c <cluster-name>` may be passed if you want to run the dashboard against specific cluster name. Dashboard will look for data related to specified cluster name which is cached on the file system.
 
-Command above will start local web server on default port 8000, and display the dashboard link.
+Command above will start local web server on default port `8000`, and display the dashboard link.
 
 ## Architecture
 
@@ -185,12 +187,12 @@ The following nodes are created in the Graph for the relevant RBAC objects:
 
 #### Edges
 
-* `:SECURITY`  - Defines a link between a Rule and a Psp nodes.
-* `:GRANT`     - Defines a link between a Role and a Rule associated with that role.
+* `:SECURITY`  - Defines a link between Rule and Psp nodes.
+* `:GRANT`     - Defines a link between Role and Rule associated with that role.
 * `:ASSIGN`    - Defines a link between an Actor (Subject) and given Role/ClusterRole (Role node).
 * `:RELATION`  - Defines a link between two different Actor (Subject) nodes.
-* `:SCOPE`     - Defines a link between a Role and a Namespace nodes.
-* `:ACCESS`    - Defines a link between a Subject and a Namespace nodes.
+* `:SCOPE`     - Defines a link between Role and Namespace nodes.
+* `:ACCESS`    - Defines a link between Subject and Namespace nodes.
 * `:AGGREGATE` - Defines a link between ClusterRoles (one ClusterRole aggregates another) `A-(aggregates)->B`
 * `:COMPOSITE` - Defines a link between ClusterRoles (one ClusterRole can be aggregated in another) `A<-(is a composite of)-B`
 
@@ -236,7 +238,7 @@ res.print_resultset
 +----------------+--------------------------------+-----------+------------------------------------------------+
 ```
 
-Note: Example query above will select all Subjects with Roles/ClusterRoles granting access to `update configmaps`.
+Note: Example query above will select all Subjects with assigned Roles/ClusterRoles granting access to `update configmaps`.
 
 ## Configuration
 
@@ -247,20 +249,19 @@ Built-in set can be expanded / overridden by adding extra custom rules to the [C
 
 #### Risk Rule Macros
 
-Macros are a set of common/shared attributes referenced by one or more risk rules. If you choose to use macro in a given risk rule you need to reference it with its name, e.g. `macro: <macro-name>`. Note that attributes defined in referenced `macro` will take precedence over the same attributes defined on the rule level.
+Macros are "containers" for a set of common/shared attributes, and referenced by one or more risk rules. If you choose to use macro in a given risk rule you would need to reference it by name, e.g. `macro: <macro-name>`. Note that attributes defined in referenced `macro` will take precedence over the same attributes defined on the rule level.
 
 Macro can contain any of the following attributes:
 
-- `query`    [RedisGraph query](#querying-the-graph). Has precedence over `template`. Requires `writer` to be defined.
-- `writer`   Writer is a Ruby expression used to format `query` result set. Writer has precedence over `template`.
-- `template` Built-in query/writer template name. If `query` & `writer` are not specified then chosen
-            query generator will be used along with matching writer.
+- `query`   - [RedisGraph query](#querying-the-graph). Has precedence over `template`. Requires `writer` to be defined.
+- `writer`  - Writer is a Ruby expression used to format `query` result set. Writer has precedence over `template`.
+- `template` - Built-in query/writer template name. If `query` & `writer` are not specified then chosen query generator will be used along with matching writer.
 
 #### Risk Rule attributes
 
 Rule can contain any of the following attributes:
 
-- `id`           [Required] Rule id should be a unique identifier.
+- `id`           [Required] Rule id is a unique rule identifier.
 - `group_title`  [Required] Title applying to all items falling under this risk check.
 - `severity`     [Required] Severity, as one of :danger, :warning, :info.
 - `info`         [Required] Textual information about the check and suggestions on how to mitigate the risk.
@@ -274,7 +275,7 @@ Rule can contain any of the following attributes:
     - **_risky-role_** - Builds multi-match graph query based on the access rules specified by `match_rules`. Generated graph query returns the following columns:
       - role_name
       - role_kind
-      - namespace_name (an array is returned if multiple items returned)
+      - namespace_name (an _array_ is returned if multiple items returned)
 
 - `match_rules`  [Conditonal] Required when `template` relies on match rules in order to build a query.
   - Example:
@@ -285,23 +286,23 @@ Rule can contain any of the following attributes:
     ```
      Attributes and values follow [Kubernetes RBAC role specification](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-examples).
 
-- `custom_params` [Optional] List of custom key-value pairs to be evaluated and replaced in a rule `query` / `writer` representations.
+- `custom_params` [Optional] List of custom key-value pairs to be evaluated and replaced in a rule `query` and `writer` representation.
   - Example:
     ```yaml
     custom_params:
     - attrA: valueA
     - attrB: valueB
     ```
-    Templated placeholders for the keys above `{{attrA}}` and `{{attrB}}` will be replaced with `valueA` and `valueB` respectively.
+    Template placeholders for the keys above `{{attrA}}` and `{{attrB}}` will be replaced with `valueA` and `valueB` respectively.
 
 - `threshold`  [Optional] Numeric value. When definied this will become available as template placeholder `{{threshold}}` in the `writer` expression.
-- `macro`      [Optional] Reference to common parameters set defined in a named macro.
+- `macro`      [Optional] Reference to common parameters defined in a named macro.
 - `disabled`   [Optional] When set to `true` it'll disable given rule and exclude it from evaluation.
                 By default all rules are enabled.
 
 #### Risk Rule examples
 
-##### Explicit query / writer expression
+##### Explicit query & writer expression
 ```yaml
 - id: verbose-rule-example
   group_title: Example rule
@@ -328,17 +329,17 @@ Rule can contain any of the following attributes:
   disabled: true
 ```
 
-The example above explicitly defines a graph `query` which is used to evaluate RBAC risk, and a `writer` expression used to format query result set. The query simply selects all `Subjects` (excluding whitelisted) and `Namespaces` to which they have access to. Note that result set will only include `Subjects` having access to more than `2` Namespaces (Noticed `threshold` value there?). Last `writer`'s expression will be captured as formatted result item output.
+The example above explicitly defines a graph `query` which is used to evaluate RBAC risk, and a `writer` expression used to format query result set. The query simply selects all `Subjects` (excluding whitelisted) and `Namespaces` to which they have access to. Note that the result set will only include `Subjects` having access to more than `2` Namespaces (Noticed `threshold` value there?). Last `writer`'s expression will be captured as formatted result item output.
 
-`writer` can access the result set item via `result` object which has methods matching elements defined in query `RETURN` section, e.g. `result.subject_kind`, `result.subject_name` etc.
+`writer` can access the result set item via `result` object with methods matching elements returned by the query, e.g. `result.subject_kind`, `result.subject_name` etc.
 
 Note:
 - `{{threshold}}` placeholder in the `writer` expression will be replaced by the rule's `threshold` keyword value.
-- `{{whitelist_subject_names}}` represents custom field which will be interpolated with values defined in the [Whitelist](#rbac-risk-whitelist) for a given rule `id`. If a placeholder field name is not defined in the whitelist it'll be substituted with an empty array `['']` by default. Read more on whitelisting below.
+- `{{whitelist_subject_names}}` represents a custom field which will be interpolated with [Whitelist](#rbac-risk-whitelist) values defined for a given rule `id`. If a placeholder field name is not defined in the whitelist it'll be substituted with an empty array `['']` by default. Read more on whitelisting below.
 
 ##### Templated Risk Rule
 
-Built-in templates simplify risk rule definition significantly, however, they are designed to extract specific kind of information and may not be a good fit for your custom rules. If you find yourself reusing the same `query` or `writer` expressions acros multiple rules, you should consider extracting those to a `macro` and reference it in your custom rules to DRY them up.
+Built-in templates simplify risk rule definition significantly, however, they are designed to extract specific kind of information and may not be a good fit for your custom rules. If you find yourself reusing the same `query` or `writer` expressions across multiple rules, you should consider extracting those to a `macro` and reference it in your custom rules to DRY them up.
 
 ```yaml
 - id: risky-any-verb-secrets
@@ -371,7 +372,7 @@ If no values are found for a given placeholder, it'll be substituted with `['']`
 
 #### Whitelist examples
 
-Example whitelist below produces the following `placeholder_key => value` mapping for a [Risk Rule](#rbac-risk-rules) with `id` attribute matching _"some-risk-rule-id"_
+Example whitelist below produces the following `placeholder-key => value` mapping for a [Risk Rule](#rbac-risk-rules) with `id` attribute value matching _"some-risk-rule-id"_
 ```
 {{whitelist_role_names}}    => ['acp:prometheus:operator']
 {{whitelist_subject_names}} => ['privileged-psp-user', 'another-user']
@@ -403,11 +404,11 @@ rules:
 
 _Krane_ can be deployed to a local or remote Kubernetes clusters easily.
 
-### K8s Pre-requisites
+### K8s Prerequisites
 
-Kubernetes namespace, service account along with appropriate RBAC must be present in the cluster. See the [Namespace](k8s/one-time/namespace.yaml) & [RBAC](k8s/one-time/rbac.yaml) definitions for reference.
+Kubernetes namespace, service account along with appropriate RBAC must be present in the cluster. See the [Prerequisites](k8s/one-time/prerequisites.yaml) for reference.
 
-Default _Krane_ entrypoint executes [bin/in-cluster-run](bin/in-cluster-run) which waits for RedisGraph instance to become available before starting RBAC report loop and dashboard web server.
+Default _Krane_ entrypoint executes [bin/in-cluster-run](bin/in-cluster-run) which waits for RedisGraph instance to become available before starting RBAC _report_ loop and _dashboard_ web server.
 
 You may control certain aspects of in-cluster execution with the following environment variables:
 
@@ -416,7 +417,7 @@ You may control certain aspects of in-cluster execution with the following envir
 
 ### Local or Remote K8s Cluster
 
-If your K8s cluster comes with built-in [Compose-on-Kubernetes](https://github.com/docker/compose-on-kubernetes) controller support (`docker-desktop` does by default), then you can deploy _Krane_ and its dependencies with a single [docker stack](https://docs.docker.com/engine/reference/commandline/stack_deploy/) command:
+If your K8s cluster comes with built-in [Compose-on-Kubernetes](https://github.com/docker/compose-on-kubernetes) controller support (`docker-desktop` supports it by default), then you can deploy _Krane_ and its dependencies with a single [docker stack](https://docs.docker.com/engine/reference/commandline/stack_deploy/) command:
 
 ```
 docker stack deploy \
@@ -426,7 +427,7 @@ docker stack deploy \
   --compose-file docker-compose.k8s.yml krane
 ```
 
-Make sure your current kube context is set correctly prior to running the command above!
+Note: Make sure your current kube context is set correctly prior to running the command above!
 
 The application Stack should be now deployed to a Kubernetes cluster and all services ready and exposed. Note that _Krane_ will automatically start its report loop and dashboard server.
 
@@ -467,26 +468,26 @@ kubectl create \
   -f k8s/krane-deployment.yaml
 ```
 
-Note that _Krane_ dashboard services is not exposed by default!
+Note that _Krane_ dashboard services are not exposed by default!
 ```sh
 kubectl port-forward svc/krane 8000 \
   --context=docker-desktop \
   --namespace=krane
 
-# Open dashboard at
+# Open Krane dashboard
 
 http://localhost:8000
 ```
 
-You can find all the manifests in [k8s](k8s/) directory which contains example deployment files.
+You can find the example deployment manifests in [k8s](k8s/) directory.
 
-Modify manifests in [k8s](k8s/) directory as required for your deployments making sure you reference correct version of _Krane_ docker image in its [deployment file](k8s/krane-deployment.yml). See [krane docker registry](https://quay.io/repository/appvia/krane?tab=tags) for available tags, or just use `latest`.
+Modify manifests as required for your deployments making sure you reference the correct version of _Krane_ docker image in its [deployment file](k8s/krane-deployment.yml). See [Krane Docker Registry](https://quay.io/repository/appvia/krane?tab=tags) for available tags, or just use `latest`.
 
 ## Notifications
 
-Krane will alert and notify about detected anomalies of medium and high severity via its Slack integration.
+Krane will notify you about detected anomalies of medium and high severity via its Slack integration.
 
-To enable notifications you may provide Slack `webhook_url` & `channel` in the [config/config.yaml](config/config.yaml) file, or alternatively set both `SLACK_WEBHOOK_URL` and `SLACK_CHANNEL` environment variables. Environment variables will take precedence over config file values.
+To enable notifications specify Slack `webhook_url` & `channel` in the [config/config.yaml](config/config.yaml) file, or alternatively set both `SLACK_WEBHOOK_URL` and `SLACK_CHANNEL` environment variables. Environment variables will take precedence over config file values.
 
 ## Local Development
 
@@ -537,7 +538,7 @@ npm start
 
 This will automatically start the Dashboard server, open default browser and watch for source files changes.
 
-_Krane_ comes preconfigured with [Skaffold](https://skaffold.dev/) for improved developer experience. Iterating on the project and validating the application by running the entire stack in local or remote Kubernetes cluster just got easier.
+_Krane_ comes preconfigured for improved developer experience with [Skaffold](https://skaffold.dev/). Iterating on the project and validating the application by running the entire stack in local or remote Kubernetes cluster just got easier.
 Code hot-reload enables local changes to be automatically propagated to the running container for faster development lifecycle.
 
 ```
@@ -553,8 +554,7 @@ bundle exec rspec
 
 ## Contributing to Krane
 
-We welcome any contributions from the community! Have a look at our [contribution](CONTRIBUTING.md) guide for more information on how to get started. If you use _Krane_ or find it useful please let us know by leaving us a **Star**. Thanks!
-
+We welcome any contributions from the community! Have a look at our [contribution](CONTRIBUTING.md) guide for more information on how to get started. If you use _Krane_, find it useful, or are generally interested in Kubernetes security then please let us know by **Starring** and **Watching** this repo. Thanks!
 
 ## Community
 
