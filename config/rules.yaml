@@ -100,7 +100,7 @@ rules:
   group_title: Subjects with too open cluster-wide access
   severity: :danger
   info: |
-    Subjects below have URESTRICTED cluster-wide access to ALL resources (apiGroups: *, core)! This is potentially dangeroud.
+    Subjects below have URESTRICTED cluster-wide access to ALL resources (apiGroups: *, core)! This is potentially dangerous.
     Review RBAC associated with items below and limit access to required namespaces only.
   template: unrestricted-cluster-wide-subjects
 
@@ -108,8 +108,8 @@ rules:
   group_title: Subjects with too open namespace level access
   severity: :warning
   info: |
-    Subjects below have URESTRICTED access to ALL resources (apiGroups: *, core) within the scope of a namespace.
-    This might be potential security risk. Review RBAC associated with items below and replace wildcard access with 
+    Subjects below have UNRESTRICTED access to ALL resources (apiGroups: *, core) within the scope of a namespace.
+    This might be a potential security risk. Review RBAC associated with items below and replace wildcard access with
     more specific access rules.
   template: unrestricted-ns-level-subjects
 
@@ -117,7 +117,7 @@ rules:
   group_title: Subjects with ability to manage RBAC
   severity: :warning
   info: |
-    List of Subjects able to create Roles and/or RoleBindings. This might be potential security risk.
+    List of Subjects able to create Roles and/or RoleBindings. This might be a potential security risk.
     Review RBAC associated with items below and consider revoking unnecessary privileges.
   template: rbac-managing-subjects
 
@@ -133,7 +133,7 @@ rules:
   group_title: Subjects associated with multiple roles
   severity: :info
   info: |
-    List of Subjects associated with multiple roles. Dependng on complexity this may indicate a bad RBAC design. 
+    List of Subjects associated with multiple roles. Depending on complexity this may indicate a bad RBAC design.
     Consider role aggregation.
   template: multiple-role-subjects
   threshold: 4
@@ -150,7 +150,7 @@ rules:
 # Secrets list / get
 
 - id: risky-get-secrets
-  group_title: Risky Roles/ClusterRoles allowing wiewing specific secrets
+  group_title: Risky Roles/ClusterRoles allowing viewing specific secrets
   severity: :warning
   info: Roles/ClusterRoles allowing to view specific secrets. This can be dangerous. Review listed Roles!
   template: risky-role
@@ -170,7 +170,7 @@ rules:
 # Impersonation
 
 - id: risky-impersonate-privileged-groups
-  group_title: Risky Roles/ClustersRoles allowing to impersonate privileged groups (like 'system:masters')
+  group_title: Risky Roles/ClusterRoles allowing to impersonate privileged groups (like 'system:masters')
   severity: :danger
   info: Roles/ClusterRoles allowing to impersonate privileged groups. This is dangerous. Review listed Roles!
   template: risky-role
@@ -181,7 +181,7 @@ rules:
 # All actions (*) on specific resource
 
 - id: risky-any-verb-secrets
-  group_title: Risky Roles/ClustersRoles allowing all actions on secrets
+  group_title: Risky Roles/ClusterRoles allowing all actions on secrets
   severity: :danger
   info: Roles/ClusterRoles allowing all actions on secrets. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -190,7 +190,7 @@ rules:
     verbs: ['*']
 
 - id: risky-any-verb-pods
-  group_title: Risky Roles/ClustersRoles allowing all actions on pods
+  group_title: Risky Roles/ClusterRoles allowing all actions on pods
   severity: :danger
   info: Roles/ClusterRoles allowing all actions on pods. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -199,7 +199,7 @@ rules:
     verbs: ['*']
 
 - id: risky-any-verb-deployments
-  group_title: Risky Roles/ClustersRoles allowing all actions on deployments
+  group_title: Risky Roles/ClusterRoles allowing all actions on deployments
   severity: :danger
   info: Roles/ClusterRoles allowing all actions on deployments. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -208,7 +208,7 @@ rules:
     verbs: ['*']
 
 - id: risky-any-verb-daemonsets
-  group_title: Risky Roles/ClustersRoles allowing all actions on daemonsets
+  group_title: Risky Roles/ClusterRoles allowing all actions on daemonsets
   severity: :danger
   info: Roles/ClusterRoles allowing all actions on daemonsets. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -217,7 +217,7 @@ rules:
     verbs: ['*']
 
 - id: risky-any-verb-statefulsets
-  group_title: Risky Roles/ClustersRoles allowing all actions on statefulsets
+  group_title: Risky Roles/ClusterRoles allowing all actions on statefulsets
   severity: :danger
   info: Roles/ClusterRoles allowing all actions on statefulsets. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -226,7 +226,7 @@ rules:
     verbs: ['*']
 
 - id: risky-any-verb-replicationcontrollers
-  group_title: Risky Roles/ClustersRoles allowing all actions on replicationcontrollers
+  group_title: Risky Roles/ClusterRoles allowing all actions on replicationcontrollers
   severity: :danger
   info: Roles/ClusterRoles allowing all actions on replicationcontrollers. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -235,7 +235,7 @@ rules:
     verbs: ['*']
 
 - id: risky-any-verb-replicasets
-  group_title: Risky Roles/ClustersRoles allowing all actions on replicasets
+  group_title: Risky Roles/ClusterRoles allowing all actions on replicasets
   severity: :danger
   info: Roles/ClusterRoles allowing all actions on replicasets. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -244,7 +244,7 @@ rules:
     verbs: ['*']
 
 - id: risky-any-verb-cronjobs
-  group_title: Risky Roles/ClustersRoles allowing all actions on cronjobs
+  group_title: Risky Roles/ClusterRoles allowing all actions on cronjobs
   severity: :danger
   info: Roles/ClusterRoles allowing all actions on cronjobs. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -253,7 +253,7 @@ rules:
     verbs: ['*']
 
 - id: risky-any-verb-jobs
-  group_title: Risky Roles/ClustersRoles allowing all actions on jobs
+  group_title: Risky Roles/ClusterRoles allowing all actions on jobs
   severity: :danger
   info: Roles/ClusterRoles allowing all actions on jobs. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -262,7 +262,7 @@ rules:
     verbs: ['*']
 
 - id: risky-any-verb-roles
-  group_title: Risky Roles/ClustersRoles allowing all actions on roles
+  group_title: Risky Roles/ClusterRoles allowing all actions on roles
   severity: :danger
   info: Roles/ClusterRoles allowing all actions on roles. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -271,7 +271,7 @@ rules:
     verbs: ['*']
 
 - id: risky-any-verb-clusterroles
-  group_title: Risky Roles/ClustersRoles allowing all actions on clusterroles
+  group_title: Risky Roles/ClusterRoles allowing all actions on clusterroles
   severity: :danger
   info: Roles/ClusterRoles allowing all actions on clusterroles. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -280,7 +280,7 @@ rules:
     verbs: ['*']
 
 - id: risky-any-verb-rolebindings
-  group_title: Risky Roles/ClustersRoles allowing all actions on rolebindings
+  group_title: Risky Roles/ClusterRoles allowing all actions on rolebindings
   severity: :danger
   info: Roles/ClusterRoles allowing all actions on rolebindings. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -289,7 +289,7 @@ rules:
     verbs: ['*']
 
 - id: risky-any-verb-clusterrolebindings
-  group_title: Risky Roles/ClustersRoles allowing all actions on clusterrolebindings
+  group_title: Risky Roles/ClusterRoles allowing all actions on clusterrolebindings
   severity: :danger
   info: Roles/ClusterRoles allowing all actions on clusterrolebindings. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -298,7 +298,7 @@ rules:
     verbs: ['*']
 
 - id: risky-any-verb-users
-  group_title: Risky Roles/ClustersRoles allowing all actions on users
+  group_title: Risky Roles/ClusterRoles allowing all actions on users
   severity: :danger
   info: "Roles/ClusterRoles allowing all actions on users. This might be dangerous. Review listed Roles!"
   template: risky-role
@@ -307,7 +307,7 @@ rules:
     verbs: ['*']
 
 - id: risky-any-verb-groups
-  group_title: Risky Roles/ClustersRoles allowing all actions on groups
+  group_title: Risky Roles/ClusterRoles allowing all actions on groups
   severity: :danger
   info: Roles/ClusterRoles allowing all actions on groups. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -318,7 +318,7 @@ rules:
 # Specific action on all (*) resources
 
 - id: risky-any-resource-delete
-  group_title: Risky Roles/ClustersRoles allowing delete action on all resources
+  group_title: Risky Roles/ClusterRoles allowing delete action on all resources
   severity: :danger
   info: Roles/ClusterRoles allowing delete action on all resources. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -327,7 +327,7 @@ rules:
     verbs: ['delete']
 
 - id: risky-any-resource-deletecollection
-  group_title: Risky Roles/ClustersRoles allowing deletecollection action on all resources
+  group_title: Risky Roles/ClusterRoles allowing deletecollection action on all resources
   severity: :danger
   info: Roles/ClusterRoles allowing deletecollection action on all resources. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -336,7 +336,7 @@ rules:
     verbs: ['deletecollection']
 
 - id: risky-any-resource-create
-  group_title: Risky Roles/ClustersRoles allowing create action on all resources
+  group_title: Risky Roles/ClusterRoles allowing create action on all resources
   severity: :danger
   info: Roles/ClusterRoles allowing create action on all resources. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -345,7 +345,7 @@ rules:
     verbs: ['create']
 
 - id: risky-any-resource-list
-  group_title: Risky Roles/ClustersRoles allowing list action on all resources
+  group_title: Risky Roles/ClusterRoles allowing list action on all resources
   severity: :danger
   info: Roles/ClusterRoles allowing list action on all resources. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -354,7 +354,7 @@ rules:
     verbs: ['list']
 
 - id: risky-any-resource-get
-  group_title: Risky Roles/ClustersRoles allowing get action on all resources
+  group_title: Risky Roles/ClusterRoles allowing get action on all resources
   severity: :danger
   info: Roles/ClusterRoles allowing get action on all resources. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -363,7 +363,7 @@ rules:
     verbs: ['get']
 
 - id: risky-any-resource-impersonate
-  group_title: Risky Roles/ClustersRoles allowing impersonate action on all resources
+  group_title: Risky Roles/ClusterRoles allowing impersonate action on all resources
   severity: :danger
   info: Roles/ClusterRoles allowing impersonate action on all resources. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -374,7 +374,7 @@ rules:
 # Malicious pod
 
 - id: risky-create-deployments
-  group_title: Risky Roles/ClustersRoles allowing to create a potentially malicious pod
+  group_title: Risky Roles/ClusterRoles allowing to create a potentially malicious pod
   severity: :warning
   info: Roles/ClusterRoles allowing to create a potentially malicious pod. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -383,7 +383,7 @@ rules:
     verbs: ['create']
 
 - id: risky-update-deployments
-  group_title: Risky Roles/ClustersRoles allowing to update a potentially malicious pod
+  group_title: Risky Roles/ClusterRoles allowing to update a potentially malicious pod
   severity: :warning
   info: Roles/ClusterRoles allowing to update a potentially malicious pod. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -392,108 +392,108 @@ rules:
     verbs: ['update']
 
 - id: risky-create-daemonsets
-  group_title: Risky Roles/ClustersRoles allowing to create a potentially malicious daemonset
+  group_title: Risky Roles/ClusterRoles allowing to create a potentially malicious daemonset
   severity: :warning
-  info: Roles/ClusterRoles allowing to create a potentially malicious daemonsets. This might be dangerous. Review listed Roles!
+  info: Roles/ClusterRoles allowing to create a potentially malicious daemonset. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
   - resources: ['daemonsets']
     verbs: ['create']
 
 - id: risky-update-daemonsets
-  group_title: Risky Roles/ClustersRoles allowing to update a potentially malicious daemonset
+  group_title: Risky Roles/ClusterRoles allowing to update a potentially malicious daemonset
   severity: :warning
-  info: Roles/ClusterRoles allowing to update a potentially malicious daemonsets. This might be dangerous. Review listed Roles!
+  info: Roles/ClusterRoles allowing to update a potentially malicious daemonset. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
   - resources: ['daemonsets']
     verbs: ['update']
 
 - id: risky-create-statefulsets
-  group_title: Risky Roles/ClustersRoles allowing to create a potentially malicious statefulsets
+  group_title: Risky Roles/ClusterRoles allowing to create a potentially malicious statefulset
   severity: :warning
-  info: Roles/ClusterRoles allowing to create a potentially malicious statefulsets. This might be dangerous. Review listed Roles!
+  info: Roles/ClusterRoles allowing to create a potentially malicious statefulset. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
   - resources: ['statefulsets']
     verbs: ['create']
 
 - id: risky-update-statefulsets
-  group_title: Risky Roles/ClustersRoles allowing to update a potentially malicious statefulsets
+  group_title: Risky Roles/ClusterRoles allowing to update a potentially malicious statefulset
   severity: :warning
-  info: Roles/ClusterRoles allowing to update a potentially malicious statefulsets. This might be dangerous. Review listed Roles!
+  info: Roles/ClusterRoles allowing to update a potentially malicious statefulset. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
   - resources: ['statefulsets']
     verbs: ['update']
 
 - id: risky-create-replicationcontrollers
-  group_title: Risky Roles/ClustersRoles allowing to create a potentially malicious replicationcontrollers
+  group_title: Risky Roles/ClusterRoles allowing to create a potentially malicious replicationcontroller
   severity: :warning
-  info: Roles/ClusterRoles allowing to create a potentially malicious replicationcontrollers. This might be dangerous. Review listed Roles!
+  info: Roles/ClusterRoles allowing to create a potentially malicious replicationcontroller. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
   - resources: ['replicationcontrollers']
     verbs: ['create']
 
 - id: risky-update-replicationcontrollers
-  group_title: Risky Roles/ClustersRoles allowing to update a potentially malicious replicationcontrollers
+  group_title: Risky Roles/ClusterRoles allowing to update a potentially malicious replicationcontroller
   severity: :warning
-  info: Roles/ClusterRoles allowing to update a potentially malicious replicationcontrollers. This might be dangerous. Review listed Roles!
+  info: Roles/ClusterRoles allowing to update a potentially malicious replicationcontroller. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
   - resources: ['replicationcontrollers']
     verbs: ['update']
 
 - id: risky-create-replicasets
-  group_title: Risky Roles/ClustersRoles allowing to create a potentially malicious replicasets
+  group_title: Risky Roles/ClusterRoles allowing to create a potentially malicious replicaset
   severity: :warning
-  info: Roles/ClusterRoles allowing to create a potentially malicious replicasets. This might be dangerous. Review listed Roles!
+  info: Roles/ClusterRoles allowing to create a potentially malicious replicaset. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
   - resources: ['replicasets']
     verbs: ['create']
 
 - id: risky-update-replicasets
-  group_title: Risky Roles/ClustersRoles allowing to update a potentially malicious replicasets
+  group_title: Risky Roles/ClusterRoles allowing to update a potentially malicious replicaset
   severity: :warning
-  info: Roles/ClusterRoles allowing to update a potentially malicious replicasets. This might be dangerous. Review listed Roles!
+  info: Roles/ClusterRoles allowing to update a potentially malicious replicaset. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
   - resources: ['replicasets']
     verbs: ['update']
 
 - id: risky-create-jobs
-  group_title: Risky Roles/ClustersRoles allowing to create a potentially malicious jobs
+  group_title: Risky Roles/ClusterRoles allowing to create a potentially malicious job
   severity: :warning
-  info: Roles/ClusterRoles allowing to create a potentially malicious jobs. This might be dangerous. Review listed Roles!
+  info: Roles/ClusterRoles allowing to create a potentially malicious job. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
   - resources: ['jobs']
     verbs: ['create']
 
 - id: risky-update-jobs
-  group_title: Risky Roles/ClustersRoles allowing to update a potentially malicious jobs
+  group_title: Risky Roles/ClusterRoles allowing to update a potentially malicious job
   severity: :warning
-  info: Roles/ClusterRoles allowing to update a potentially malicious jobs. This might be dangerous. Review listed Roles!
+  info: Roles/ClusterRoles allowing to update a potentially malicious job. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
   - resources: ['jobs']
     verbs: ['update']
 
 - id: risky-create-cronjobs
-  group_title: Risky Roles/ClustersRoles allowing to create a potentially malicious cronjobs
+  group_title: Risky Roles/ClusterRoles allowing to create a potentially malicious cronjob
   severity: :warning
-  info: Roles/ClusterRoles allowing to create a potentially malicious cronjobs. This might be dangerous. Review listed Roles!
+  info: Roles/ClusterRoles allowing to create a potentially malicious cronjob. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
   - resources: ['cronjobs']
     verbs: ['create']
 
 - id: risky-update-cronjobs
-  group_title: Risky Roles/ClustersRoles allowing to update a potentially malicious cronjobs
+  group_title: Risky Roles/ClusterRoles allowing to update a potentially malicious cronjob
   severity: :warning
-  info: Roles/ClusterRoles allowing to update a potentially malicious cronjobs. This might be dangerous. Review listed Roles!
+  info: Roles/ClusterRoles allowing to update a potentially malicious cronjob. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
   - resources: ['cronjobs']
@@ -502,7 +502,7 @@ rules:
 # Multiple permissions simulaneously
 
 - id: risky-create-rolebinding-role
-  group_title: Risky Roles/ClustersRoles allowing creation of rolebinding and associate privileged role to itself
+  group_title: Risky Roles/ClusterRoles allowing creation of rolebinding and associate privileged role to itself
   severity: :warning
   info: Roles able to create bindings referencing roles. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -515,7 +515,7 @@ rules:
     verbs: ['bind']
 
 - id: risky-create-rolebinding-clusterrole
-  group_title: Risky Roles/ClustersRoles allowing creation of rolebinding and associate privileged clusterrole to itself
+  group_title: Risky Roles/ClusterRoles allowing creation of rolebinding and associate privileged clusterrole to itself
   severity: :warning
   info: Roles able to create bindings referencing cluster roles. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -527,8 +527,8 @@ rules:
     resources: ['clusterroles']
     verbs: ['bind']
 
-- id: risky-create-clusterrolebinding-clusterrole
-  group_title: Risky Roles/ClustersRoles allowing creation of clusterrolebinding and associate privileged clusterrole to itself
+- id: risky-create-clusterrolebinding
+  group_title: Risky Roles/ClusterRoles allowing creation of clusterrolebinding
   severity: :warning
   info: Roles able to create cluster role bindings. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -536,14 +536,11 @@ rules:
   - apiGroups: ['rbac.authorization.k8s.io']
     resources: ['clusterrolebindings']
     verbs: ['create']
-  - apiGroups: ['rbac.authorization.k8s.io']
-    resources: ['clusterroles']
-    verbs: ['bind']
 
 # Pod exec / attach
 
 - id: risky-exec-pods
-  group_title: Risky Roles/ClustersRoles allowing shell on pods
+  group_title: Risky Roles/ClusterRoles allowing shell on pods
   severity: :danger
   info: Roles allow exec into running container. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -554,7 +551,7 @@ rules:
     verbs: ['get']
 
 - id: risky-attach-pods 
-  group_title: Risky Roles/ClustersRoles allowing attaching pod and view all its logs in realtime
+  group_title: Risky Roles/ClusterRoles allowing attaching pod and view all its logs in realtime
   severity: :danger
   info: Roles allow attaching to a running container. This might be dangerous. Review listed Roles!
   template: risky-role
@@ -567,7 +564,7 @@ rules:
 # Low priority
 
 - id: risky-add-rolebinding
-  group_title: Risky Roles/ClustersRoles allowing users in a rolebinding to add other users to their rolebindings
+  group_title: Risky Roles/ClusterRoles allowing users in a rolebinding to add other users to their rolebindings
   severity: :warning
   info: This might be dangerous. Review listed Roles!
   template: risky-role
