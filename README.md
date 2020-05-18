@@ -17,10 +17,10 @@ _Krane_ is a simple Kubernetes RBAC static analysis tool. It identifies potentia
   * Locally as a CLI or [docker container](https://quay.io/repository/appvia/krane?tab=tags).
   * In CI/CD pipelines as a step action detecting potential RBAC flaws before it gets applied to the cluster.
   * As a standalone service continuously analysing state of RBAC within a Kubernetes cluster.
-- **Reporting** - _Krane_ produces easy to understand RBAC risk report in machine-readable format.
+- **Reporting** - _Krane_ produces an easy to understand RBAC risk report in machine-readable format.
 - **Dashboard** - _Krane_ comes with a simple Dashboard UI helping you understand in-cluster RBAC design. Dashboard presents high-level overview of RBAC security posture and highlights detected risks. It also allows for further RBAC controls inspection via faceted tree and graph network views.
 - **Alerting** - It will alert on detected medium and high severity risks via its Slack integration.
-- **RBAC in the Graph** - _Krane_ indexes entirety of Kubernets RBAC in a local Graph database which makes any further ad-hoc interrogating of RBAC data easy, with arbitrary CypherQL queries.
+- **RBAC in the Graph** - _Krane_ indexes entirety of Kubernetes RBAC in a local Graph database which makes any further ad-hoc interrogating of RBAC data easy, with arbitrary CypherQL queries.
 
 ## Contents
 
@@ -70,7 +70,7 @@ To inspect what services are running and the associated ports:
 docker-compose ps
 ```
 
-To stop _Krane_ and its dependecy services:
+To stop _Krane_ and its dependency services:
 ```
 docker-compose down
 ```
