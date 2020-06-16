@@ -43,7 +43,7 @@ GEM
     facets (3.1.0)
     factory_bot (5.2.0)
       activesupport (>= 4.2.0)
-    ffi (1.12.2)
+    ffi (1.13.1)
     ffi-compiler (1.0.1)
       ffi (>= 1.0.0)
       rake
@@ -67,9 +67,9 @@ GEM
       activesupport (>= 4.2)
       aes_key_wrap
       bindata
-    kubeclient (4.6.0)
+    kubeclient (4.7.0)
       http (>= 3.0, < 5.0)
-      recursive-open-struct (~> 1.0, >= 1.0.4)
+      recursive-open-struct (~> 1.1, >= 1.1.1)
       rest-client (~> 2.0)
     mail (2.7.1)
       mini_mime (>= 0.1.1)
