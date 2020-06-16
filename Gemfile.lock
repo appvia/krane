@@ -96,7 +96,7 @@ GEM
     power_assert (1.2.0)
     profile (0.4.0)
     public_suffix (4.0.5)
-    rack (2.2.2)
+    rack (2.2.3)
     rack-oauth2 (1.14.0)
       activesupport
       attr_required
