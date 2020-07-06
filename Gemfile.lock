@@ -67,8 +67,12 @@ GEM
       activesupport (>= 4.2)
       aes_key_wrap
       bindata
-    kubeclient (4.7.0)
+    jsonpath (1.0.5)
+      multi_json
+      to_regexp (~> 0.2.1)
+    kubeclient (4.8.0)
       http (>= 3.0, < 5.0)
+      jsonpath (~> 1.0)
       recursive-open-struct (~> 1.1, >= 1.1.1)
       rest-client (~> 2.0)
     mail (2.7.1)
@@ -79,6 +83,7 @@ GEM
     mime-types-data (3.2020.0512)
     mini_mime (1.0.2)
     minitest (5.14.1)
+    multi_json (1.14.1)
     netrc (0.11.0)
     openid_connect (1.2.0)
       activemodel
@@ -106,7 +111,7 @@ GEM
     rainbow (3.0.0)
     rake (13.0.1)
     rdoc (6.2.1)
-    recursive-open-struct (1.1.1)
+    recursive-open-struct (1.1.2)
     redis (4.1.4)
     redisgraph (2.0.0)
       redis (~> 4)
@@ -160,6 +165,7 @@ GEM
     test-unit (3.3.6)
       power_assert
     thread_safe (0.3.6)
+    to_regexp (0.2.1)
     tzinfo (1.2.7)
       thread_safe (~> 0.1)
     unf (0.1.4)
