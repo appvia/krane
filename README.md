@@ -4,7 +4,7 @@
 
 ![Stability:Beta](https://img.shields.io/badge/stability-beta-orange)
 ![CircleCI](https://img.shields.io/circleci/build/github/appvia/krane/master)
-![GitHub tag (latest SemVer)](https://img.shields.io/github/v/release/appvia/krane)
+![GitHub tag (latest SemVer)](https://img.shields.io/github/v/release/appvia/krane)(https://github.com/appvia/krane/releases/latest)
 ![License: Apache-2.0](https://img.shields.io/github/license/appvia/kore)
 ![Docker Repository on Quay.io](https://img.shields.io/badge/container-ready-brightgreen)
 
