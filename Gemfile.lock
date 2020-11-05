@@ -144,7 +144,7 @@ GEM
       unicode-display_width (>= 1.4.0, < 2.0)
     rubocop-ast (0.1.0)
       parser (>= 2.7.0.1)
-    ruby-prof (1.4.1)
+    ruby-prof (1.4.2)
     ruby-progressbar (1.10.1)
     simplecov (0.18.5)
       docile (~> 1.1)
