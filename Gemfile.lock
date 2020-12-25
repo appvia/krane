@@ -157,7 +157,7 @@ GEM
       httpclient (>= 2.4)
     terminal-table (1.8.0)
       unicode-display_width (~> 1.1, >= 1.1.1)
-    test-unit (3.3.6)
+    test-unit (3.3.8)
       power_assert
     thread_safe (0.3.6)
     tzinfo (1.2.7)
