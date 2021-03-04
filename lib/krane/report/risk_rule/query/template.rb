@@ -123,8 +123,8 @@ module Krane
                   subject_kind            
               ),
               writer: <<-'EOF'
-                txt = result.rule_type == 'resource' ? 'resources' : 'non-resource URLs'
-                "#{result.subject_kind} #{result.subject_name} has * access to * #{txt} (apiGroup: #{result.rule_api_group})"
+                "#{result.subject_kind} #{result.subject_name} has * access to * " +
+                "#{result.rule_type == 'resource' ? 'resources' : 'non-resource URLs'} (apiGroup: #{result.rule_api_group})"
               EOF
             )
           end
@@ -153,8 +153,8 @@ module Krane
                   subject_kind
               ),
               writer: <<-'EOF'
-                txt = result.rule_type == 'resource' ? 'resources' : 'non-resource URLs'
-                "#{result.subject_kind} #{result.subject_name} has * access to * #{txt} (apiGroup: #{result.rule_api_group}) in #{result.namespace_name} namespace"
+                "#{result.subject_kind} #{result.subject_name} has * access to * " +
+                "#{result.rule_type == 'resource' ? 'resources' : 'non-resource URLs'} (apiGroup: #{result.rule_api_group}) in #{result.namespace_name} namespace"
               EOF
             )
           end
