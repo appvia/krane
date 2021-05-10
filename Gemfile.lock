@@ -41,7 +41,7 @@ GEM
     domain_name (0.5.20190701)
       unf (>= 0.0.5, < 1.0.0)
     facets (3.1.0)
-    factory_bot (6.1.0)
+    factory_bot (6.2.0)
       activesupport (>= 5.0.0)
     ffi (1.15.0)
     ffi-compiler (1.0.1)
