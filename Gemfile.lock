@@ -186,7 +186,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  bundler (~> 1.16)
+  bundler (>= 2.1.0)
   byebug
   factory_bot
   krane!
@@ -201,4 +201,4 @@ DEPENDENCIES
   test-unit
 
 BUNDLED WITH
-   1.17.3
+   2.2.17
