@@ -163,7 +163,7 @@ GEM
       httpclient (>= 2.4)
     terminal-table (1.8.0)
       unicode-display_width (~> 1.1, >= 1.1.1)
-    test-unit (3.4.1)
+    test-unit (3.4.4)
       power_assert
     tzinfo (2.0.4)
       concurrent-ruby (~> 1.0)
