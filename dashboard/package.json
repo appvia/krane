@@ -27,7 +27,7 @@
         "keycharm": "^0.2.0",
         "patternfly-bootstrap-treeview": "2.1.10",
         "popper.js": "^1.16.1",
-        "prismjs": "^1.23.0",
+        "prismjs": "^1.24.0",
         "stickyfilljs": "2.1.0",
         "vis-data": "^6.2.1",
         "vis-network": "6.4.7",
