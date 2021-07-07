@@ -17,7 +17,7 @@ version: '3.7'
 services:
 
   redisgraph:    
-    image: redislabs/redisgraph:1.99.7    
+    image: redislabs/redisgraph:2.1.0   
     container_name: redisgraph
     ports:
       - 6379:6379
