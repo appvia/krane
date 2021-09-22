@@ -15,7 +15,7 @@
 
 ##############################################################
 # Stage: builder
-FROM ruby:2.6.5-alpine3.10 AS builder
+FROM ruby:2.6.8-alpine3.14 AS builder
 
 WORKDIR /app
 
@@ -32,7 +32,7 @@ RUN cd dashboard && npm install --no-optional && npm rebuild node-sass && node_m
 
 ##############################################################
 # Stage: final
-FROM ruby:2.6.5-alpine3.10
+FROM ruby:2.6.8-alpine3.14
 
 LABEL org="Appvia Ltd"
 LABEL website="appvia.io"
