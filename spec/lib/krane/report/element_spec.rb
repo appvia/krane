@@ -7,7 +7,7 @@ RSpec.describe Krane::Report::Element do
       subject { described_class.build }
 
       it 'raise an exception' do
-        expect { subject }.to raise_exception(ArgumentError, "missing keywords: id, severity, group_title, info, data, writer")
+        expect { subject }.to raise_exception(ArgumentError, "missing keywords: :id, :severity, :group_title, :info, :data, :writer")
       end
 
     end
