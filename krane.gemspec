@@ -42,15 +42,15 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
 
-  spec.add_development_dependency 'bundler', '~> 1.16'
+  spec.add_development_dependency 'bundler', '>= 2.2.10'
   spec.add_development_dependency 'byebug'
   spec.add_development_dependency 'factory_bot'
   spec.add_development_dependency 'profile'
   spec.add_development_dependency 'ruby-prof'
-  spec.add_development_dependency "rake", ">= 12.3.3"
-  spec.add_development_dependency "rspec", "~> 3.0"
+  spec.add_development_dependency 'rake', '>= 12.3.3'
+  spec.add_development_dependency 'rspec', '~> 3.0'
   spec.add_development_dependency 'rspec_junit_formatter'
-  spec.add_development_dependency 'rdoc'
+  spec.add_development_dependency 'rdoc', '>= 6.3.1'
   spec.add_development_dependency 'rubocop'
   spec.add_development_dependency 'simplecov'
   spec.add_development_dependency 'test-unit'
