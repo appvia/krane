@@ -59,7 +59,8 @@
         "gulp-uglify": "3.0.2",
         "html-includes": "4.4.1",
         "merge-stream": "2.0.0",
-        "sass": "^1.41.0"
+        "sass": "^1.41.0",
+        "set-value": ">=4.0.1"
     },
     "resolutions": {
         "glob-parent": "^5.1.2",
