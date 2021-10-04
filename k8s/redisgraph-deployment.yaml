@@ -32,7 +32,7 @@ spec:
         io.appvia.krane.service: redisgraph
     spec:
       containers:
-      - image: redislabs/redisgraph:1.99.7
+      - image: redislabs/redisgraph:2.6.1
         imagePullPolicy: "IfNotPresent"
         name: redisgraph
         ports:

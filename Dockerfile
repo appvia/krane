@@ -15,7 +15,7 @@
 
 ##############################################################
 # Stage: builder
-FROM ruby:2.6.5-alpine3.10 AS builder
+FROM ruby:2.7.3-alpine3.13 AS builder
 
 WORKDIR /app
 
@@ -25,14 +25,16 @@ RUN apk add --update --no-cache git bash curl make gcc libc-dev tzdata g++ npm
 COPY . /app
 
 # install gems
-RUN bundle install --jobs 20 --retry 5 --deployment --without development test
+RUN bundle config set deployment 'true'
+RUN bundle config set without 'development test'
+RUN bundle install --jobs 20 --retry 5
 
 # build the UI
-RUN cd dashboard && npm install --no-optional && npm rebuild node-sass && node_modules/.bin/gulp release
+RUN cd dashboard && npm install --no-optional && npm audit fix && npm rebuild node-sass && npm install -g sass-migrator && sass-migrator division **/*.scss && node_modules/.bin/gulp release
 
 ##############################################################
 # Stage: final
-FROM ruby:2.6.5-alpine3.10
+FROM ruby:2.7.3-alpine3.13
 
 LABEL org="Appvia Ltd"
 LABEL website="appvia.io"

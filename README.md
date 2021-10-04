@@ -556,9 +556,11 @@ bundle exec rspec
 
 We welcome any contributions from the community! Have a look at our [contribution](CONTRIBUTING.md) guide for more information on how to get started. If you use _Krane_, find it useful, or are generally interested in Kubernetes security then please let us know by **Starring** and **Watching** this repo. Thanks!
 
-## Community
+## Get Involved
 
-//TODO
+Join discussion on our [Community channel](https://www.appvia.io/join-the-appvia-community).
+
+Krane is a community project and we welcome your contributions. To report a bug, suggest an improvement, or request a new feature please open a Github issue. Refer to our [contributing](CONTRIBUTING.md) guide for more information on how you can help.
 
 ## Roadmap
 

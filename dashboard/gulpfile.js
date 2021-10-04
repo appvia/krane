@@ -28,7 +28,7 @@ const header = require("gulp-header");
 const merge = require("merge-stream");
 const plumber = require("gulp-plumber");
 const rename = require("gulp-rename");
-const sass = require("gulp-sass");
+const sass = require('gulp-sass')(require('sass'));
 const uglify = require("gulp-uglify");
 
 // Load package.json for banner
@@ -103,21 +103,21 @@ function modules() {
   // Stickyfill
   var stickyfillJS = gulp.src('./node_modules/stickyfilljs/dist/stickyfill.min.js')
     .pipe(gulp.dest('./compiled/vendor/stickyfilljs'));
-  // vis-network  
+  // vis-network
   var visNetworkJS = gulp.src('./node_modules/vis-network/standalone/umd/*')
     .pipe(gulp.dest('./compiled/vendor/vis-network'));
-  // vue.js  
+  // vue.js
   var vueJS = gulp.src('./node_modules/vue/dist/vue.min.js')
     .pipe(gulp.dest('./compiled/vendor/vue'));
   return merge(
-    bootstrapJS, 
-    bootstrapSCSS, 
-    bootstrapTreeview, 
-    prismjsJS, 
-    prismjsCSS, 
-    chartJS, 
-    fontAwesome, 
-    jquery, 
+    bootstrapJS,
+    bootstrapSCSS,
+    bootstrapTreeview,
+    prismjsJS,
+    prismjsCSS,
+    chartJS,
+    fontAwesome,
+    jquery,
     jqueryEasing,
     stickyfillJS,
     visNetworkJS,
