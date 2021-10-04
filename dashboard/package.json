@@ -3,54 +3,67 @@
     "name": "kubernetes-rbac-inspector",
     "version": "1.0.0",
     "scripts": {
-        "start": "node_modules/.bin/gulp watch"
+        "start": "node_modules/.bin/gulp watch",
+        "preinstall": "npx npm-force-resolutions"
     },
     "description": "Kubernetes RBAC security risk inspector",
-    "homepage": "https://github.com/appvia/rbacvis",
+    "homepage": "https://github.com/appvia/krane",
     "author": "Appvia.io",
     "contributors": [
         "Marcin Ciszak (@marcinc)"
     ],
-    "license": "ISC",
+    "license": "SEE LICENSE IN https://github.com/appvia/krane/blob/master/LICENSE",
     "repository": {
         "type": "git",
-        "url": "https://github.com/appvia/rbacvis.git"
+        "url": "https://github.com/appvia/krane.git"
+    },
+    "engines": {
+        "node": "^14.17.6"
     },
     "dependencies": {
-        "@fortawesome/fontawesome-free": "5.10.2",
-        "@popperjs/core": "2.0.6",
-        "bootstrap": "4.3.1",
-        "chart.js": "2.8.0",
+        "@fortawesome/fontawesome-free": "5.15.4",
+        "@popperjs/core": "2.10.1",
+        "bootstrap": "4.6.0",
+        "chart.js": "3.5.1",
         "express": "4.17.1",
-        "jquery": ">=3.5.0",
+        "jquery": "^3.6.0",
         "jquery.easing": "^1.4.1",
-        "keycharm": "^0.2.0",
+        "keycharm": "^0.4.0",
+        "lodash": "^4.17.21",
         "patternfly-bootstrap-treeview": "2.1.10",
-        "popper.js": "^1.16.1",
-        "prismjs": "^1.23.0",
+        "prismjs": "^1.24.1",
         "stickyfilljs": "2.1.0",
-        "vis-data": "^6.2.1",
-        "vis-network": "6.4.7",
-        "vis-util": "^1.1.8",
-        "vue": ""
+        "vis-data": "^7.1.2",
+        "vis-network": "9.1.0",
+        "vis-util": "^5.0.2",
+        "vue": "^2.6.14",
+        "vue-popperjs": "2.3.0",
+        "uuid": "^8.0.0",
+        "@egjs/hammerjs": "^2.0.0",
+        "timsort": "^0.3.0"
     },
     "devDependencies": {
-        "@babel/core": "7.7.5",
+        "@babel/core": "7.15.5",
         "babel-preset-env": "1.7.0",
-        "browser-sync": "^2.26.14",
-        "del": "5.1.0",
-        "gulp": "4.0.2",
-        "gulp-autoprefixer": "7.0.0",
+        "browser-sync": "^2.27.5",
+        "del": "6.0.0",
+        "gulp": "^4.0.2",
+        "gulp-autoprefixer": "^6.1.0",
         "gulp-babel": "8.0.0",
-        "gulp-clean-css": "4.2.0",
-        "gulp-exec": "4.0.0",
+        "gulp-clean-css": "4.3.0",
+        "gulp-exec": "5.0.0",
         "gulp-header": "2.0.9",
         "gulp-plumber": "^1.2.1",
-        "gulp-rename": "1.4.0",
-        "gulp-sass": "4.0.2",
+        "gulp-rename": "2.0.0",
+        "gulp-sass": "^5.0.0",
         "gulp-uglify": "3.0.2",
-        "html-includes": "4.2.0",
+        "html-includes": "4.4.1",
         "merge-stream": "2.0.0",
-        "opencollective": "1.0.3"
+        "sass": "^1.41.0",
+        "set-value": ">=4.0.1"
+    },
+    "resolutions": {
+        "glob-parent": "^5.1.2",
+        "yargs-parser": "^18.1.2"
     }
 }

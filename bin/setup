@@ -18,6 +18,7 @@ set -euo pipefail
 IFS=$'\n\t'
 set -vx
 
-bundle install --path .bundle
+bundle config set path '.bundle'
+bundle install
 
 # Do any other automated setup that you need to do here

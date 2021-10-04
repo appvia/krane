@@ -2,7 +2,7 @@
 version: 2.1
 
 orbs:
-  ruby: circleci/ruby@0.2.1
+  ruby: circleci/ruby@1.2.0
 
 executors:
   skaffold:
@@ -13,7 +13,7 @@ jobs:
   test:
     parallelism: 1
     docker:
-      - image: ruby:2.6.5-alpine3.10
+      - image: ruby:2.7.3-alpine3.13
         environment:
           BUNDLE_JOBS: 10
           BUNDLE_RETRY: 5
@@ -30,10 +30,8 @@ jobs:
       - run:
           name: Configure Bundler
           command: gem install bundler -v $(cat Gemfile.lock | tail -1 | tr -d " ")
-      - ruby/load-cache
       - ruby/install-deps
-      - ruby/save-cache
-      - ruby/run-tests
+      - ruby/rspec-test
       - store_artifacts:
           path: coverage
 

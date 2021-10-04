@@ -1,3 +1,5 @@
+@use 'sass:math';
+
 // Topbar
 .topbar {
   height: $topbar-base-height;
@@ -42,7 +44,7 @@
     position: static;
     .dropdown-menu {
       width: calc(100% - #{$grid-gutter-width});
-      right: $grid-gutter-width / 2;
+      right: math.div($grid-gutter-width, 2)
     }
   }
   .dropdown-list {

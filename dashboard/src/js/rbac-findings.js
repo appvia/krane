@@ -18,7 +18,7 @@ $(function() {
 
   // Load RBAC findings
   $.getJSON("data/" + $.urlParam('cluster') + "/rbac-findings.json", function(findings) {
-    
+
     // findings
     new Vue({
       el: '#findings',
@@ -39,7 +39,7 @@ $(function() {
       el: '#alert-danger',
       data: {
         items: findings['results'].filter(item => {
-          return item.status === 'danger'
+          return item.status === "danger"
         })
       }
     });
@@ -54,13 +54,12 @@ $(function() {
     var ctx = $('#scanPieChart');
     if (ctx.length) {
       // Set new default font family and font color to mimic Bootstrap's default styling
-      Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
-      Chart.defaults.global.defaultFontColor = '#858796';
+      Chart.defaults.font.family = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+      Chart.defaults.color = '#858796';
 
-      var myPieChart = new Chart(ctx, {
+      new Chart(ctx, {
         type: 'doughnut',
         data: {
-          labels: ["Danger", "Warning", "Info", "Success"],
           datasets: [{
             data: [
               findings['summary']['danger'],
