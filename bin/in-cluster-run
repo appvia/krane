@@ -4,18 +4,19 @@
 : ${KRANE_REPORT_OUTPUT:=none}
 
 echo "Verify RedisGraph is UP..."
-while [[ "$((printf "PING\r\n";) | nc redisgraph 6379 -w 2 | awk '{$1=$1};1')" != "+PONG" ]]; 
+while [[ "$((printf "PING\r\n";) | nc redisgraph 6379 -w 2 | awk '{$1=$1};1')" != "+PONG" ]];
   do echo "* Waiting for redisgraph to become available" && sleep 2;
 done
 
 echo "Starting report loop..."
 while true; do
   bin/krane report --incluster -o ${KRANE_REPORT_OUTPUT}
-  echo "- sleeping ${KRANE_REPORT_INTERVAL} sec"
+  echo "- Sleeping ${KRANE_REPORT_INTERVAL} sec"
   sleep ${KRANE_REPORT_INTERVAL}
 done &
 
-sleep 5
-
 echo "Starting Krane dashboard..."
-bin/krane dashboard
+while ! nohup bin/krane dashboard; do
+  echo "- Waiting for Krane dashboard to become available"
+  sleep 5
+done
