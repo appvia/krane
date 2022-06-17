@@ -47,7 +47,7 @@ GEM
     ffi-compiler (1.0.1)
       ffi (>= 1.0.0)
       rake
-    hashie (4.1.0)
+    hashie (5.0.0)
     highline (2.0.3)
     http (4.4.1)
       addressable (~> 2.3)
