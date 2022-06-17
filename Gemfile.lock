@@ -43,7 +43,7 @@ GEM
     facets (3.1.0)
     factory_bot (6.2.1)
       activesupport (>= 5.0.0)
-    ffi (1.15.4)
+    ffi (1.15.5)
     ffi-compiler (1.0.1)
       ffi (>= 1.0.0)
       rake
@@ -55,7 +55,7 @@ GEM
       http-form_data (~> 2.2)
       http-parser (~> 1.2.0)
     http-accept (1.7.0)
-    http-cookie (1.0.4)
+    http-cookie (1.0.5)
       domain_name (~> 0.5)
     http-form_data (2.3.0)
     http-parser (1.2.3)
@@ -67,9 +67,9 @@ GEM
       activesupport (>= 4.2)
       aes_key_wrap
       bindata
-    jsonpath (1.1.0)
+    jsonpath (1.1.2)
       multi_json
-    kubeclient (4.9.2)
+    kubeclient (4.9.3)
       http (>= 3.0, < 5.0)
       jsonpath (~> 1.0)
       recursive-open-struct (~> 1.1, >= 1.1.1)
@@ -77,9 +77,9 @@ GEM
     mail (2.7.1)
       mini_mime (>= 0.1.1)
     memoist (0.16.2)
-    mime-types (3.3.1)
+    mime-types (3.4.1)
       mime-types-data (~> 3.2015)
-    mime-types-data (3.2021.0901)
+    mime-types-data (3.2022.0105)
     mini_mime (1.1.1)
     minitest (5.15.0)
     multi_json (1.15.0)
@@ -99,7 +99,7 @@ GEM
       ast (~> 2.4.1)
     power_assert (2.0.1)
     profile (0.4.0)
-    public_suffix (4.0.6)
+    public_suffix (4.0.7)
     rack (2.2.3)
     rack-oauth2 (1.19.0)
       activesupport
@@ -166,7 +166,7 @@ GEM
       concurrent-ruby (~> 1.0)
     unf (0.1.4)
       unf_ext
-    unf_ext (0.0.8)
+    unf_ext (0.0.8.2)
     unicode-display_width (2.1.0)
     validate_email (0.1.6)
       activemodel (>= 3.0)
