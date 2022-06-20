@@ -24,6 +24,9 @@ RUN apk add --update --no-cache git bash curl make gcc libc-dev tzdata g++ npm
 # copy app
 COPY . /app
 
+# install bundler
+RUN gem install bundler --no-document -v $(cat Gemfile.lock | tail -n 1 | xargs)
+
 # install gems
 RUN bundle config set deployment 'true'
 RUN bundle config set without 'development test'
