@@ -21,10 +21,12 @@
         "node": "^14.17.6"
     },
     "dependencies": {
+        "@egjs/hammerjs": "^2.0.0",
         "@fortawesome/fontawesome-free": "5.15.4",
         "@popperjs/core": "2.10.1",
         "bootstrap": "4.6.0",
         "chart.js": "3.5.1",
+        "chokidar": "^3.5.3",
         "express": "4.17.1",
         "jquery": "^3.6.0",
         "jquery.easing": "^1.4.1",
@@ -33,19 +35,18 @@
         "patternfly-bootstrap-treeview": "2.1.10",
         "prismjs": "^1.27.0",
         "stickyfilljs": "2.1.0",
+        "timsort": "^0.3.0",
+        "uuid": "^8.0.0",
         "vis-data": "^7.1.2",
         "vis-network": "9.1.0",
         "vis-util": "^5.0.2",
         "vue": "^2.6.14",
-        "vue-popperjs": "2.3.0",
-        "uuid": "^8.0.0",
-        "@egjs/hammerjs": "^2.0.0",
-        "timsort": "^0.3.0"
+        "vue-popperjs": "2.3.0"
     },
     "devDependencies": {
         "@babel/core": "7.15.5",
         "babel-preset-env": "1.7.0",
-        "browser-sync": "^2.27.5",
+        "browser-sync": "^2.27.10",
         "del": "6.0.0",
         "gulp": "^4.0.2",
         "gulp-autoprefixer": "^6.1.0",
@@ -62,8 +63,10 @@
         "sass": "^1.41.0",
         "set-value": ">=4.0.1"
     },
-    "resolutions": {
-        "glob-parent": "^5.1.2",
-        "yargs-parser": "^18.1.2"
+    "overrides":{
+        "chokidar":"^3.5.3",
+        "glob-stream":"^7.0.0",
+        "glob-parent":"^6.0.2",
+        "micromatch":"^4.0.0"
     }
 }
