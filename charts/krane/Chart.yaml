@@ -1,0 +1,15 @@
+apiVersion: v2
+name: krane
+description: A Helm chart for Krane
+type: application
+version: 0.1.1
+appVersion: "v0.1.1"
+sources:
+  - https://github.com/appvia/krane
+maintainers:
+  - name: Appvia
+    email: info@appvia.io
+    url: https://appvia.io
+  - name: Marcin
+    email: marcin.ciszak@appvia.io
+    url: https://github.com/marcinc
