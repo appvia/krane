@@ -48,9 +48,10 @@ ENV APP_PATH /app
 
 RUN apk add --update --no-cache git bash curl npm yarn
 
-RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
-	chmod +x ./kubectl && \
-	mv ./kubectl /usr/local/bin/kubectl
+ENV KUBECTL_VERSION="1.23.0"
+ENV KUBECTL_BINARY_URL=https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+
+RUN curl -sL -o /usr/bin/kubectl ${KUBECTL_BINARY_URL} && chmod +x /usr/bin/kubectl
 
 RUN addgroup -g 1000 -S appuser \
  && adduser -u 1000 -S appuser -G appuser
