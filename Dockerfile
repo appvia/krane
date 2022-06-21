@@ -15,7 +15,7 @@
 
 ##############################################################
 # Stage: builder
-FROM ruby:2.7.3-alpine3.13 AS builder
+FROM ruby:2.7.6-alpine3.16 AS builder
 
 WORKDIR /app
 
@@ -25,7 +25,7 @@ RUN apk add --update --no-cache git bash curl make gcc libc-dev tzdata g++ npm
 COPY . /app
 
 # install bundler
-RUN gem install bundler --no-document -v $(cat Gemfile.lock | tail -n 1 | xargs)
+RUN gem install bundler --no-document -v $(cat Gemfile.lock | tail -1 | tr -d " ")
 
 # install gems
 RUN bundle config set deployment 'true'
@@ -37,7 +37,7 @@ RUN cd dashboard && npm install --no-optional && npm audit fix && npm rebuild no
 
 ##############################################################
 # Stage: final
-FROM ruby:2.7.3-alpine3.13
+FROM ruby:2.7.6-alpine3.16
 
 LABEL org="Appvia Ltd"
 LABEL website="appvia.io"
@@ -48,9 +48,10 @@ ENV APP_PATH /app
 
 RUN apk add --update --no-cache git bash curl npm yarn
 
-RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.14.0/bin/linux/amd64/kubectl && \
-	chmod +x ./kubectl && \
-	mv ./kubectl /usr/local/bin/kubectl
+ENV KUBECTL_VERSION="1.23.0"
+ENV KUBECTL_BINARY_URL=https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+
+RUN curl -sL -o /usr/bin/kubectl ${KUBECTL_BINARY_URL} && chmod +x /usr/bin/kubectl
 
 RUN addgroup -g 1000 -S appuser \
  && adduser -u 1000 -S appuser -G appuser
