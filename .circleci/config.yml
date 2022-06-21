@@ -13,7 +13,7 @@ jobs:
   test:
     parallelism: 1
     docker:
-      - image: ruby:2.7.3-alpine3.13
+      - image: ruby:2.7.6-alpine3.14
         environment:
           BUNDLE_JOBS: 10
           BUNDLE_RETRY: 5
@@ -21,6 +21,9 @@ jobs:
           KRANE_ENV: test
     steps:
       - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+          version: 20.10.14
       - run:
           name: Install system deps
           command: apk add --update --no-cache git bash curl make gcc libc-dev tzdata g++ npm
@@ -41,7 +44,7 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-          version: 18.06.0-ce
+          version: 20.10.14
       - run:
           name: Build artifacts w/ Skaffold
           command: |
@@ -58,7 +61,7 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-          version: 18.06.0-ce
+          version: 20.10.14
       - run:
           name: Build & Push artifacts w/ Skaffold
           command: |
@@ -88,7 +91,7 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-          version: 18.06.0-ce
+          version: 20.10.14
       - attach_workspace:
           at: ~/project
       - run:
@@ -104,7 +107,7 @@ jobs:
             export SKAFFOLD_LABEL="io.appvia.krane/git-sha=${CIRCLE_SHA1}"
             export SKAFFOLD_KUBE_CONTEXT=<<parameters.skaffold_kube_context>>
             export SKAFFOLD_NAMESPACE=<<parameters.skaffold_namespace>>
-            
+
             # Deploy with Skaffold - refers to artefacts built in previous step
             skaffold deploy --build-artifacts build/${CIRCLE_SHA1}.json
 
