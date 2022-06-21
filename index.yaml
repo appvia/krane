@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  krane:
+  - apiVersion: v2
+    appVersion: 0.1.1
+    created: "2022-06-21T10:37:48.230706993Z"
+    description: A Helm chart for Krane
+    digest: 8cf428a727305e435cf6fa322a6d2ca088d6b0e093428f1e237d13cc1386bf36
+    name: krane
+    type: application
+    urls:
+    - https://github.com/appvia/krane/releases/download/krane-0.1.1/krane-0.1.1.tgz
+    version: 0.1.1
+generated: "2022-06-21T10:37:48.230713093Z"
