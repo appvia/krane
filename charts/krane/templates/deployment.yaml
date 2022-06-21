@@ -1,0 +1,152 @@
+# Copyright 2020 Appvia Ltd <info@appvia.io>
+
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+#     http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# RedisGraph
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redisgraph
+  labels:
+    {{- include "krane.labels" . | nindent 4 }}
+    {{- include "krane.redisgraphSelectorLabels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "krane.redisgraphSelectorLabels" . | nindent 6 }}
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        {{- include "krane.redisgraphSelectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - image: "{{ .Values.redisgraph.image }}:{{ .Values.redisgraph.tag }}"
+        imagePullPolicy: "IfNotPresent"
+        name: redisgraph
+        ports:
+        - containerPort: 6379
+        resources:
+          limits:
+            cpu: 1
+            memory: 200Mi
+          requests:
+            cpu: 200m
+            memory: 20Mi
+      restartPolicy: Always
+      serviceAccountName: ""
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: Always
+
+# Krane
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "krane.fullname" . }}
+  labels:
+    {{- include "krane.labels" . | nindent 4 }}
+    {{- include "krane.selectorLabels" . | nindent 4 }}
+    network/krane: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "krane.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "krane.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "krane.serviceAccountName" . }}
+      automountServiceAccountToken: true
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          command:
+          - /bin/bash
+          - -c
+          - bin/in-cluster-run
+          env:
+          - name: KRANE_REPORT_INTERVAL
+            value: "{{ .Values.params.reportInterval }}"
+          - name: KRANE_REPORT_OUTPUT
+            value: "{{ .Values.params.reportOutput }}"
+          - name: REDIS_GRAPH_HOST
+            value: "{{ .Values.params.redisGraphHost }}"
+          - name: SLACK_WEBHOOK_URL
+            value: "{{ .Values.params.slackWebhookURL }}"
+          - name: SLACK_CHANNEL
+            value: "{{ .Values.params.slackChannel }}"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          livenessProbe:
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - bin/krane --version
+            failureThreshold: 3
+            initialDelaySeconds: 20
+            periodSeconds: 60
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+              - /bin/bash
+              - -c
+              - bin/krane --version
+            failureThreshold: 3
+            successThreshold: 1
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: Always
