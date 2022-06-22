@@ -24,7 +24,7 @@ _Krane_ is a simple Kubernetes RBAC static analysis tool. It identifies potentia
 
 ## Contents
 
-- [Local Quick Start](#local-quick-start)
+- [Quick Start](#quick-start)
 - [Usage Guide](#usage-guide)
 - [Architecture](#architecture)
 - [Kubernetes Deployment](#kubernetes-deployment)
@@ -35,15 +35,25 @@ _Krane_ is a simple Kubernetes RBAC static analysis tool. It identifies potentia
 - [Roadmap](#roadmap)
 - [License](#license)
 
-## Local Quick Start
+## Quick Start
 
-Get started locally with Docker Compose.
+You can get started with Krane by installing it via Helm chart in your target Kubernetes cluster or running it locally with Docker.
 
-### Prerequisites
+### Install Helm chart
+
+It is assumed that you have [Helm CLI](https://helm.sh/docs/intro/install/) installed on your machine.
+
+```sh
+$ helm repo add appvia https://appvia.github.io/krane
+$ helm repo update
+$ helm install krane appvia/krane --namespace krane --create-namespace
+```
+
+Follow Helm chart installation output on how to port-forward Krane dashboard.
+
+### Run with Docker
 
 It is assumed that you have [docker](https://docs.docker.com/get-docker/) running on your local machine. Install [docker-compose](https://docs.docker.com/compose/install/#install-compose) if you haven't already.
-
-### Run Krane locally
 
 Krane depends on RedisGraph. `docker-compose` stack defines all what's required to build and run _Krane_ service locally. It'll also take care of its [RedisGraph](https://oss.redislabs.com/redisgraph/) dependency.
 
@@ -433,10 +443,10 @@ Install helm chart:
 ```sh
 $ helm repo add appvia https://appvia.github.io/krane
 $ helm repo update
-$ helm install krane appvia/krane --namespace krane --create-namespace --set image.tag=latest
+$ helm install krane appvia/krane --namespace krane --create-namespace
 ```
 
-See [values.yaml](helm/krane/values.yaml) file for details of other settable options and parameters.
+See [values.yaml](charts/krane/values.yaml) file for details of other settable options and parameters.
 
 #### K8s manifests
 
