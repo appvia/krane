@@ -17,9 +17,9 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (7.0.3)
-      activesupport (= 7.0.3)
-    activesupport (7.0.3)
+    activemodel (7.0.3.1)
+      activesupport (= 7.0.3.1)
+    activesupport (7.0.3.1)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
@@ -36,6 +36,7 @@ GEM
       highline (~> 2.0.0)
     concurrent-ruby (1.1.10)
     diff-lcs (1.5.0)
+    digest (3.1.0)
     docile (1.4.0)
     domain_name (0.5.20190701)
       unf (>= 0.0.5, < 1.0.0)
@@ -60,12 +61,13 @@ GEM
     http-parser (1.2.3)
       ffi-compiler (>= 1.0, < 2.0)
     httpclient (2.8.3)
-    i18n (1.10.0)
+    i18n (1.12.0)
       concurrent-ruby (~> 1.0)
-    json-jwt (1.13.0)
+    json-jwt (1.15.2)
       activesupport (>= 4.2)
       aes_key_wrap
       bindata
+      httpclient
     jsonpath (1.1.2)
       multi_json
     kubeclient (4.9.3)
@@ -80,13 +82,20 @@ GEM
       mime-types-data (~> 3.2015)
     mime-types-data (3.2022.0105)
     mini_mime (1.1.2)
-    minitest (5.16.0)
+    minitest (5.16.2)
     multi_json (1.15.0)
+    net-protocol (0.1.3)
+      timeout
+    net-smtp (0.3.1)
+      digest
+      net-protocol
+      timeout
     netrc (0.11.0)
-    openid_connect (1.3.0)
+    openid_connect (1.3.1)
       activemodel
       attr_required (>= 1.0.0)
       json-jwt (>= 1.5.0)
+      net-smtp
       rack-oauth2 (>= 1.6.1)
       swd (>= 1.0.0)
       tzinfo
@@ -101,8 +110,8 @@ GEM
     psych (4.0.4)
       stringio
     public_suffix (4.0.7)
-    rack (2.2.3.1)
-    rack-oauth2 (1.19.0)
+    rack (2.2.4)
+    rack-oauth2 (1.21.2)
       activesupport
       attr_required
       httpclient
@@ -165,7 +174,8 @@ GEM
       httpclient (>= 2.4)
     test-unit (3.5.3)
       power_assert
-    tzinfo (2.0.4)
+    timeout (0.3.0)
+    tzinfo (2.0.5)
       concurrent-ruby (~> 1.0)
     unf (0.1.4)
       unf_ext
