@@ -69,7 +69,6 @@ metadata:
   labels:
     {{- include "krane.labels" . | nindent 4 }}
     {{- include "krane.selectorLabels" . | nindent 4 }}
-    network/krane: "true"
 spec:
   replicas: 1
   selector:
