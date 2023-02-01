@@ -47,6 +47,23 @@ module Krane
         end
       end
 
+      memoize def version
+        url = URI("#{@api_endpoint}/version")
+
+        http = Net::HTTP.new(url.host, url.port)
+        http.use_ssl = (url.scheme == "https")
+        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+        request = Net::HTTP::Get.new(url)
+        request["Content-Type"] = "application/json"
+        request["Authorization"] = "Bearer #{@auth_options[:bearer_token]}"
+
+        response = http.request(request)
+        j = JSON.parse(response.read_body)
+
+        "#{j['major']}.#{j['minor']}".to_f
+      end
+
       memoize def psp
         Kubeclient::Client.new(
           @api_endpoint + '/apis/policy', 'v1beta1',
