@@ -27,7 +27,7 @@
         "bootstrap": "4.6.0",
         "chart.js": "3.5.1",
         "chokidar": "^3.5.3",
-        "express": "4.17.1",
+        "express": "^4.18.2",
         "jquery": "^3.6.0",
         "jquery.easing": "^1.4.1",
         "keycharm": "^0.4.0",
@@ -46,7 +46,7 @@
     "devDependencies": {
         "@babel/core": "7.15.5",
         "babel-preset-env": "1.7.0",
-        "browser-sync": "^2.27.10",
+        "browser-sync": "~2.27.11",
         "del": "6.0.0",
         "gulp": "^4.0.2",
         "gulp-autoprefixer": "^6.1.0",
@@ -63,10 +63,11 @@
         "sass": "^1.41.0",
         "set-value": ">=4.0.1"
     },
-    "overrides":{
-        "chokidar":"^3.5.3",
-        "glob-stream":"^7.0.0",
-        "glob-parent":"^6.0.2",
-        "micromatch":"^4.0.0"
+    "overrides": {
+        "chokidar": "^3.5.3",
+        "glob-stream": "^7.0.0",
+        "glob-parent": "^6.0.2",
+        "micromatch": "^4.0.0",
+        "ua-parser-js": "^1.0.33"
     }
 }

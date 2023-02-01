@@ -89,7 +89,7 @@ rules:
 #
 
 - id: subjects-with-privileged-psp-not-scoped-to-ns
-  group_title: Subjects with privileged PSP access NOT scoped to a namespace
+  group_title: Subjects with privileged PSP access NOT scoped to a namespace (N/A for K8s version >= 1.25)
   severity: :danger
   info: |
     Subjects below are able to run privileged containers and are NOT scoped to a particular namespace.

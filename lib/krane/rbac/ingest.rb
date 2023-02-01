@@ -57,9 +57,11 @@ module Krane
       end
 
       def index_rbac
+        k8s = Clients::Kubernetes.new(@options)
+
         graph = build_graph(@cache_path) do
           bootstrap_nodes
-          psp
+          psp if k8s.version < 1.25
           roles
           cluster_roles
           role_bindings
@@ -94,7 +96,7 @@ module Krane
 
         FileUtils.mkdir_p @cache_path
 
-        File.write("#{@cache_path}/psp",                 k8s.psp.get_pod_security_policies(as: :raw))
+        File.write("#{@cache_path}/psp",                 k8s.psp.get_pod_security_policies(as: :raw))  if k8s.version < 1.25
         File.write("#{@cache_path}/roles",               k8s.rbac.get_roles(as: :raw))
         File.write("#{@cache_path}/rolebindings",        k8s.rbac.get_role_bindings(as: :raw))
         File.write("#{@cache_path}/clusterroles",        k8s.rbac.get_cluster_roles(as: :raw))

@@ -163,10 +163,14 @@ RSpec.describe Krane::Rbac::Ingest do
           dir:     dir
         )
       end # mock options
+      let(:k8s_client) { double }
 
       before do
         @instance = described_class.new(options)
         @instance.instance_variable_set(:@cache_path, dir)
+
+        allow(Krane::Clients::Kubernetes).to receive(:new).with(options) { k8s_client }
+        allow(k8s_client).to receive(:version) { 1.23 }
       end
 
       it 'will build and index rbac graph, and return a results map' do
@@ -221,15 +225,45 @@ RSpec.describe Krane::Rbac::Ingest do
         allow(Krane::Clients::Kubernetes).to receive(:new).with(options) { k8s_client }
       end
 
-      it 'will call Kubernetes API and fetch RBAC objects and cache them locally' do
-        expect(FileUtils).to receive(:mkdir_p).with(dir)
-        expect(File).to receive(:write).with("#{dir}/psp", psps)
-        expect(File).to receive(:write).with("#{dir}/roles", roles)
-        expect(File).to receive(:write).with("#{dir}/rolebindings", role_bindings)
-        expect(File).to receive(:write).with("#{dir}/clusterroles", cluster_roles)
-        expect(File).to receive(:write).with("#{dir}/clusterrolebindings", cluster_role_bindings)
 
-        @instance.send(:fetch_rbac)
+      context 'for k8s version < 1.25' do
+
+        before do
+          allow(k8s_client).to receive(:version) { 1.23 }
+          allow(k8s_client).to receive_message_chain(:psp, :get_pod_security_policies).with(as: :raw) { psps }
+        end
+
+        it 'will call Kubernetes API and fetch RBAC objects including PSPs and cache them locally' do
+          expect(FileUtils).to receive(:mkdir_p).with(dir)
+          expect(File).to receive(:write).with("#{dir}/psp", psps)
+          expect(File).to receive(:write).with("#{dir}/roles", roles)
+          expect(File).to receive(:write).with("#{dir}/rolebindings", role_bindings)
+          expect(File).to receive(:write).with("#{dir}/clusterroles", cluster_roles)
+          expect(File).to receive(:write).with("#{dir}/clusterrolebindings", cluster_role_bindings)
+
+          @instance.send(:fetch_rbac)
+        end
+
+      end
+
+
+      context 'for k8s version >= 1.25' do
+
+        before do
+          allow(k8s_client).to receive(:version) { 1.25 }
+        end
+
+        it 'will call Kubernetes API and fetch RBAC objects excluding deprecated PSPs and cache them locally' do
+          expect(FileUtils).to receive(:mkdir_p).with(dir)
+          expect(File).to_not receive(:write).with("#{dir}/psp", psps)
+          expect(File).to receive(:write).with("#{dir}/roles", roles)
+          expect(File).to receive(:write).with("#{dir}/rolebindings", role_bindings)
+          expect(File).to receive(:write).with("#{dir}/clusterroles", cluster_roles)
+          expect(File).to receive(:write).with("#{dir}/clusterrolebindings", cluster_role_bindings)
+
+          @instance.send(:fetch_rbac)
+        end
+
       end
 
     end

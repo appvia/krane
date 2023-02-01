@@ -153,6 +153,8 @@ If Pod Security Policies are not in use you may bypass the expectation above by 
 }
 ```
 
+Note, `PodSecurityPolicy` was deprecated in Kubernetes v1.21, and removed from Kubernetes in v1.25.
+
 #### Inside a Kubernetes cluster
 
 To run a report from a container running in Kubernetes cluster
@@ -196,7 +198,7 @@ _Krane_ indexes RBAC entites in RedisGraph. This allows us to query network of d
 
 The following nodes are created in the Graph for the relevant RBAC objects:
 
-* `Psp`       - A PSP node containing attributes around the pod security policy.
+* `Psp`       - A PSP node containing attributes around the pod security policy. Only applicable when working with K8s < 1.25.
 * `Rule`      - Rule node represents access control rule around Kubernetes resources.
 * `Role`      - Role node represents a given Role or ClusterRole. `kind` attribute defines type of role.
 * `Subject`   - Subject represents all possible actors in the cluster (`kind`: User, Group and ServiceAccount)
@@ -204,7 +206,7 @@ The following nodes are created in the Graph for the relevant RBAC objects:
 
 #### Edges
 
-* `:SECURITY`  - Defines a link between Rule and Psp nodes.
+* `:SECURITY`  - Defines a link between Rule and Psp nodes. Only applicable when working with K8s < 1.25.
 * `:GRANT`     - Defines a link between Role and Rule associated with that role.
 * `:ASSIGN`    - Defines a link between an Actor (Subject) and given Role/ClusterRole (Role node).
 * `:RELATION`  - Defines a link between two different Actor (Subject) nodes.
