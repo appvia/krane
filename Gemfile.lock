@@ -117,7 +117,7 @@ GEM
     psych (4.0.6)
       stringio
     public_suffix (5.0.1)
-    rack (3.0.4.1)
+    rack (3.0.6.1)
     rack-oauth2 (2.2.0)
       activesupport
       attr_required
