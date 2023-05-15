@@ -183,7 +183,7 @@ GEM
       attr_required (>= 0.0.5)
       faraday (~> 2.0)
       faraday-follow_redirects
-    test-unit (3.5.7)
+    test-unit (3.5.8)
       power_assert
     timeout (0.3.0)
     tzinfo (2.0.6)
