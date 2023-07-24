@@ -167,7 +167,7 @@ GEM
       unicode-display_width (>= 2.4.0, < 3.0)
     rubocop-ast (1.27.0)
       parser (>= 3.2.1.0)
-    ruby-prof (1.6.1)
+    ruby-prof (1.6.3)
     ruby-progressbar (1.13.0)
     ruby2_keywords (0.0.5)
     simplecov (0.22.0)
