@@ -49,7 +49,7 @@
         "browser-sync": "~2.27.11",
         "del": "6.0.0",
         "gulp": "^4.0.2",
-        "gulp-autoprefixer": "^6.1.0",
+        "gulp-autoprefixer": "^8.0.0",
         "gulp-babel": "8.0.0",
         "gulp-clean-css": "4.3.0",
         "gulp-exec": "5.0.0",
