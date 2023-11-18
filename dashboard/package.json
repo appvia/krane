@@ -40,7 +40,7 @@
         "vis-data": "^7.1.2",
         "vis-network": "9.1.0",
         "vis-util": "^5.0.2",
-        "vue": "^2.6.14",
+        "vue": "^2.7.15",
         "vue-popperjs": "2.3.0"
     },
     "devDependencies": {
