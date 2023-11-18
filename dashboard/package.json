@@ -23,7 +23,7 @@
     "dependencies": {
         "@egjs/hammerjs": "^2.0.0",
         "@fortawesome/fontawesome-free": "5.15.4",
-        "@popperjs/core": "2.10.1",
+        "@popperjs/core": "2.11.8",
         "bootstrap": "4.6.0",
         "chart.js": "3.5.1",
         "chokidar": "^3.5.3",
