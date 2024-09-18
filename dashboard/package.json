@@ -27,7 +27,7 @@
         "bootstrap": "4.6.0",
         "chart.js": "3.5.1",
         "chokidar": "^3.5.3",
-        "express": "^4.18.2",
+        "express": "^4.20.0",
         "jquery": "^3.6.0",
         "jquery.easing": "^1.4.1",
         "keycharm": "^0.4.0",
