@@ -23,7 +23,6 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-          version: 20.10.14
       - run:
           name: Install system deps
           command: apk add --update --no-cache git bash curl make gcc libc-dev tzdata g++ npm
@@ -44,7 +43,6 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-          version: 20.10.14
       - run:
           name: Build artifacts w/ Skaffold
           command: |
@@ -61,7 +59,6 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-          version: 20.10.14
       - run:
           name: Build & Push artifacts w/ Skaffold
           command: |
@@ -91,7 +88,6 @@ jobs:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-          version: 20.10.14
       - attach_workspace:
           at: ~/project
       - run:
