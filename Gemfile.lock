@@ -115,7 +115,7 @@ GEM
     parser (3.2.2.3)
       ast (~> 2.4.1)
       racc
-    power_assert (2.0.3)
+    power_assert (2.0.4)
     profile (0.4.0)
     psych (5.1.2)
       stringio
@@ -189,7 +189,7 @@ GEM
       attr_required (>= 0.0.5)
       faraday (~> 2.0)
       faraday-follow_redirects
-    test-unit (3.6.1)
+    test-unit (3.6.2)
       power_assert
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
