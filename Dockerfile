@@ -33,7 +33,7 @@ RUN bundle config set without 'development test'
 RUN bundle install --jobs 20 --retry 5
 
 # build the UI
-RUN cd dashboard && npm install --omit=optional && npm audit fix && npm rebuild node-sass && npm install -g sass-migrator && sass-migrator division **/*.scss && node_modules/.bin/gulp release
+RUN cd dashboard && npm install --omit=dev && npm rebuild node-sass && npm install -g sass-migrator && sass-migrator division **/*.scss && node_modules/.bin/gulp release
 
 ##############################################################
 # Stage: final
@@ -54,7 +54,7 @@ ENV KUBECTL_BINARY_URL=https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/a
 RUN curl -sL -o /usr/bin/kubectl ${KUBECTL_BINARY_URL} && chmod +x /usr/bin/kubectl
 
 RUN addgroup -g 1000 -S appuser \
- && adduser -u 1000 -S appuser -G appuser
+    && adduser -u 1000 -S appuser -G appuser
 
 USER 1000
 
