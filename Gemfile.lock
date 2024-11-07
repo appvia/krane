@@ -17,9 +17,9 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (7.0.6)
-      activesupport (= 7.0.6)
-    activesupport (7.0.6)
+    activemodel (7.0.7.1)
+      activesupport (= 7.0.7.1)
+    activesupport (7.0.7.1)
       concurrent-ruby (~> 1.0, >= 1.0.2)
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
@@ -40,6 +40,8 @@ GEM
     docile (1.4.0)
     domain_name (0.5.20190701)
       unf (>= 0.0.5, < 1.0.0)
+    email_validator (2.2.4)
+      activemodel
     facets (3.1.0)
     factory_bot (6.2.1)
       activesupport (>= 5.0.0)
@@ -95,22 +97,18 @@ GEM
     mini_mime (1.1.2)
     minitest (5.25.1)
     multi_json (1.15.0)
-    net-protocol (0.1.3)
-      timeout
-    net-smtp (0.3.3)
-      net-protocol
     netrc (0.11.0)
-    openid_connect (2.2.0)
+    openid_connect (2.3.1)
       activemodel
       attr_required (>= 1.0.0)
+      email_validator
       faraday (~> 2.0)
       faraday-follow_redirects
       json-jwt (>= 1.16)
-      net-smtp
+      mail
       rack-oauth2 (~> 2.2)
       swd (~> 2.0)
       tzinfo
-      validate_email
       validate_url
       webfinger (~> 2.0)
     parallel (1.23.0)
@@ -193,16 +191,12 @@ GEM
       faraday-follow_redirects
     test-unit (3.6.1)
       power_assert
-    timeout (0.3.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.8.2)
     unicode-display_width (2.4.2)
-    validate_email (0.1.6)
-      activemodel (>= 3.0)
-      mail (>= 2.2.5)
     validate_url (1.0.15)
       activemodel (>= 3.0.0)
       public_suffix
