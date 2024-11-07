@@ -17,22 +17,29 @@ limitations under the License.
 "use strict";
 
 // Load plugins
-const autoprefixer = require("gulp-autoprefixer");
-const babel = require('gulp-babel');
-const browsersync = require("browser-sync").create();
-const cleanCSS = require("gulp-clean-css");
-const del = require("del");
-const exec = require('child_process').exec;
-const gulp = require("gulp");
-const header = require("gulp-header");
-const merge = require("merge-stream");
-const plumber = require("gulp-plumber");
-const rename = require("gulp-rename");
-const sass = require('gulp-sass')(require('sass'));
-const uglify = require("gulp-uglify");
+import postcss from 'gulp-postcss';
+import autoprefixer from "gulp-autoprefixer";
+import babel from 'gulp-babel';
+// const browsersync = require("browser-sync").create();
+import * as bs from 'browser-sync';
+const browsersync = bs.create();
+import cleanCSS from "gulp-clean-css";
+import { deleteAsync } from 'del';
+import { exec } from 'child_process';
+// import { src, dest, watch as __watch, series, parallel } from "gulp";
+import { src, dest, watch, series, parallel } from "gulp";
+import header from "gulp-header";
+import mergeStream from "merge-stream";
+import plumber from "gulp-plumber";
+import rename from "gulp-rename";
+// const sass = require('gulp-sass')(require('sass'));
+import gulpSass from 'gulp-sass';
+import * as s from 'sass';
+const sass = gulpSass(s);
+import uglify from "gulp-uglify";
 
 // Load package.json for banner
-const pkg = require('./package.json');
+import pkg from './package.json' assert { type: "json" };
 
 // Set the banner content
 const banner = ['/*!\n',
@@ -61,146 +68,157 @@ function browserSyncReload(done) {
 }
 
 // Clean vendor
-function clean() {
-  return del(["./compiled/vendor/"]);
+function clean(done) {
+  async () => {
+    await deleteAsync('./compiled/vendor/');
+  }
+  done();
 }
 
 // Bring third party dependencies from node_modules into vendor directory
-function modules() {
-  // RISK RULES CONFIG
-  var riskRules = gulp.src('../config/rules.yaml')
-    .pipe(gulp.dest('./compiled/data/config'));
-  // Bootstrap JS
-  var bootstrapJS = gulp.src('./node_modules/bootstrap/dist/js/*')
-    .pipe(gulp.dest('./compiled/vendor/bootstrap/js'));
-  // Bootstrap SCSS
-  var bootstrapSCSS = gulp.src('./node_modules/bootstrap/scss/**/*')
-    .pipe(gulp.dest('./compiled/vendor/bootstrap/scss'));
-  // Bootstrap Treeview JS/CSS
-  var bootstrapTreeview = gulp.src('./node_modules/patternfly-bootstrap-treeview/dist/**/*')
-    .pipe(gulp.dest('./compiled/vendor/bootstrap-treeview'));
-  // Prism JS
-  var prismjsJS = gulp.src('./node_modules/prismjs/components/**/*')
-    .pipe(gulp.dest('./compiled/vendor/prismjs/js'));
-  // Prism CSS
-  var prismjsCSS = gulp.src('./node_modules/prismjs/themes/**/*')
-    .pipe(gulp.dest('./compiled/vendor/prismjs/css'));
-  // ChartJS
-  var chartJS = gulp.src('./node_modules/chart.js/dist/*.js')
-    .pipe(gulp.dest('./compiled/vendor/chart.js'));
-  // Font Awesome
-  var fontAwesome = gulp.src('./node_modules/@fortawesome/**/*')
-    .pipe(gulp.dest('./compiled/vendor'));
-  // jQuery Easing
-  var jqueryEasing = gulp.src('./node_modules/jquery.easing/*.js')
-    .pipe(gulp.dest('./compiled/vendor/jquery-easing'));
-  // jQuery
-  var jquery = gulp.src([
+function modules(done) {
+  async () => {
+    // RISK RULES CONFIG
+    var riskRules = src('../config/rules.yaml')
+      .pipe(dest('./compiled/data/config'));
+    // Bootstrap JS
+    var bootstrapJS = src('./node_modules/bootstrap/dist/js/*')
+      .pipe(dest('./compiled/vendor/bootstrap/js'));
+    // Bootstrap SCSS
+    var bootstrapSCSS = src('./node_modules/bootstrap/scss/**/*')
+      .pipe(dest('./compiled/vendor/bootstrap/scss'));
+    // Bootstrap Treeview JS/CSS
+    var bootstrapTreeview = src('./node_modules/patternfly-bootstrap-treeview/dist/**/*')
+      .pipe(dest('./compiled/vendor/bootstrap-treeview'));
+    // Prism JS
+    var prismjsJS = src('./node_modules/prismjs/components/**/*')
+      .pipe(dest('./compiled/vendor/prismjs/js'));
+    // Prism CSS
+    var prismjsCSS = src('./node_modules/prismjs/themes/**/*')
+      .pipe(dest('./compiled/vendor/prismjs/css'));
+    // ChartJS
+    var chartJS = src('./node_modules/chart.js/dist/*.js')
+      .pipe(dest('./compiled/vendor/chart.js'));
+    // Font Awesome
+    var fontAwesome = src('./node_modules/@fortawesome/**/*')
+      .pipe(dest('./compiled/vendor'));
+    // jQuery Easing
+    var jqueryEasing = src('./node_modules/jquery.easing/*.js')
+      .pipe(dest('./compiled/vendor/jquery-easing'));
+    // jQuery
+    var jquery = src([
       './node_modules/jquery/dist/*',
       '!./node_modules/jquery/dist/core.js'
     ])
-    .pipe(gulp.dest('./compiled/vendor/jquery'));
-  // Stickyfill
-  var stickyfillJS = gulp.src('./node_modules/stickyfilljs/dist/stickyfill.min.js')
-    .pipe(gulp.dest('./compiled/vendor/stickyfilljs'));
-  // vis-network
-  var visNetworkJS = gulp.src('./node_modules/vis-network/standalone/umd/*')
-    .pipe(gulp.dest('./compiled/vendor/vis-network'));
-  // vue.js
-  var vueJS = gulp.src('./node_modules/vue/dist/vue.min.js')
-    .pipe(gulp.dest('./compiled/vendor/vue'));
-  return merge(
-    bootstrapJS,
-    bootstrapSCSS,
-    bootstrapTreeview,
-    prismjsJS,
-    prismjsCSS,
-    chartJS,
-    fontAwesome,
-    jquery,
-    jqueryEasing,
-    stickyfillJS,
-    visNetworkJS,
-    vueJS
-  );
+      .pipe(dest('./compiled/vendor/jquery'));
+    // Stickyfill
+    var stickyfillJS = src('./node_modules/stickyfilljs/dist/stickyfill.min.js')
+      .pipe(dest('./compiled/vendor/stickyfilljs'));
+    // vis-network
+    var visNetworkJS = src('./node_modules/vis-network/standalone/umd/*')
+      .pipe(dest('./compiled/vendor/vis-network'));
+    // vue.js
+    // var vueJS = src('./node_modules/vue/dist/vue.min.js')
+    var vueJS = src('./node_modules/vue/index.js')
+      .pipe(dest('./compiled/vendor/vue'));
+    return mergeStream(
+      bootstrapJS,
+      bootstrapSCSS,
+      bootstrapTreeview,
+      prismjsJS,
+      prismjsCSS,
+      chartJS,
+      fontAwesome,
+      jquery,
+      jqueryEasing,
+      stickyfillJS,
+      visNetworkJS,
+      vueJS
+    );
+  }
+  done();
 }
 
 // CSS task
-function css() {
-  return gulp
-    .src([
+function css(done) {
+  async () => {
+    return src([
       "./src/scss/**/*.scss"
     ])
-    .pipe(plumber())
-    .pipe(sass({
-      outputStyle: "expanded",
-      includePaths: "./node_modules",
-    }))
-    .on("error", sass.logError)
-    .pipe(autoprefixer({
-      cascade: false
-    }))
-    .pipe(header(banner, {
-      pkg: pkg
-    }))
-    .pipe(gulp.dest("./compiled/css"))
-    .pipe(rename({
-      suffix: ".min"
-    }))
-    .pipe(cleanCSS())
-    .pipe(gulp.dest("./compiled/css"))
-    .pipe(browsersync.stream());
+      .pipe(plumber())
+      .pipe(sass({
+        outputStyle: "expanded",
+        includePaths: "./node_modules",
+      }))
+      .on("error", sass.logError)
+      .pipe(postcss([autoprefixer()]))
+      // .pipe(autoprefixer({
+      //   cascade: false
+      // }))
+      .pipe(header(banner, {
+        pkg: pkg
+      }))
+      .pipe(dest("./compiled/css"))
+      .pipe(rename({
+        suffix: ".min"
+      }))
+      .pipe(cleanCSS())
+      .pipe(dest("./compiled/css"))
+      .pipe(browsersync.stream());
+  }
+  done();
 }
 
 // JS task
-function js() {
-  return gulp
-    .src([
+function js(done) {
+  async () => {
+    return src([
       './src/js/*.js',
       '!./src/js/*.min.js',
     ])
-    .pipe(babel({
-      presets: ['env']
-    }))
-    .pipe(uglify())
-    .pipe(header(banner, {
-      pkg: pkg
-    }))
-    .pipe(rename({
-      suffix: '.min'
-    }))
-    .pipe(gulp.dest('./compiled/js'))
-    .pipe(browsersync.stream());
+      .pipe(babel({
+        presets: ['env']
+      }))
+      .pipe(uglify())
+      .pipe(header(banner, {
+        pkg: pkg
+      }))
+      .pipe(rename({
+        suffix: '.min'
+      }))
+      .pipe(dest('./compiled/js'))
+      .pipe(browsersync.stream());
+  }
+  done();
 }
 
 // Watch files
-function watchFiles() {
-  gulp.watch("./src/scss/**/*", css);
-  gulp.watch(["./src/js/**/*", "!./src/js/**/*.min.js"], js);
-  gulp.watch("./src/html/**/*.html", gulp.series(compileHtml, browserSyncReload));
+function watchFiles(done) {
+  async () => {
+    watch("./src/scss/**/*", css);
+    watch(["./src/js/**/*", "!./src/js/**/*.min.js"], js);
+    watch("./src/html/**/*.html", series(compileHtml, browserSyncReload));
+  }
+  done();
 }
 
 // Compile HTML
-function compileHtml() {
-  return exec('node_modules/.bin/html-includes --src src/html --dest ./compiled', function (err, stdout, stderr) {
-    console.log(stdout);
-    console.log(stderr);
-  });
+function compileHtml(done) {
+  async () => {
+    return exec('node_modules/.bin/html-includes --src src/html --dest ./compiled', function (err, stdout, stderr) {
+      console.log(stdout);
+      console.log(stderr);
+    });
+  }
+  done();
 }
 
 // Define complex tasks
-const vendor = gulp.series(clean, modules);
-const build = gulp.series(vendor, gulp.parallel(css, js, compileHtml));
-const release = gulp.series(build, gulp.parallel(compileHtml));
-const watch = gulp.series(build, gulp.parallel(watchFiles, browserSync));
+const vendor = series(clean, modules);
+const build = series(vendor, parallel(css, js, compileHtml));
+const release = series(build, compileHtml);
+const watcher = series(build, parallel(watchFiles, browserSync));
 
-// Export tasks
-exports.css = css;
-exports.js = js;
-exports.clean = clean;
-exports.vendor = vendor;
-exports.build = build;
-exports.compileHtml = compileHtml;
-exports.watch = watch;
-exports.default = build;
-exports.release = release;
+export { clean, css, js, vendor, build, compileHtml, watcher as watch, release };
+
+export default build;
