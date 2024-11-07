@@ -130,7 +130,7 @@ GEM
       json-jwt (>= 1.11.0)
       rack (>= 2.1.0)
     rainbow (3.1.1)
-    rake (13.0.6)
+    rake (13.2.1)
     rdoc (6.5.1.1)
       psych (>= 4.0.0)
     recursive-open-struct (1.1.3)
