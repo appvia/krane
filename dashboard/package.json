@@ -55,5 +55,10 @@
         "vis-util": "^5.0.2",
         "vue": "^3.5.12",
         "vue-popperjs": "2.3.0"
+    },
+    "overrides": {
+        "patternfly-bootstrap-treeview": {
+            "bootstrap": "^5.3.3"
+        }
     }
 }
