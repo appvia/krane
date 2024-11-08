@@ -33,7 +33,7 @@ RUN bundle config set without 'development test'
 RUN bundle install --jobs 20 --retry 5
 
 # build the UI
-RUN cd dashboard && npm install --omit=dev && npm rebuild node-sass && npm install -g sass-migrator && sass-migrator division **/*.scss && node_modules/.bin/gulp release
+RUN cd dashboard && npm install --omit=optional --omit=dev && npm audit fix && npm rebuild node-sass && npm install -g sass-migrator && sass-migrator division **/*.scss && node_modules/.bin/gulp release
 
 ##############################################################
 # Stage: final
