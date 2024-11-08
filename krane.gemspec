@@ -45,6 +45,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'bundler', '>= 2.2.28'
   spec.add_development_dependency 'byebug'
   spec.add_development_dependency 'factory_bot'
+  spec.add_development_dependency 'jekyll'
   spec.add_development_dependency 'profile'
   spec.add_development_dependency 'ruby-prof'
   spec.add_development_dependency 'rake', '>= 12.3.3'
