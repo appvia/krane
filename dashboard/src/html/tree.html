@@ -1,7 +1,9 @@
+---
+---
 <!DOCTYPE html>
 <html lang="en">
 
-${require('./partials/_head.html')}
+{% include_relative partials/_head.html %}
 
 <link href="vendor/bootstrap-treeview/bootstrap-treeview.min.css" rel="stylesheet" type="text/css">
 
@@ -11,7 +13,7 @@ ${require('./partials/_head.html')}
   <div id="wrapper">
 
     <!-- Sidebar -->
-    ${require('./partials/_sidebar.html')}
+    {% include_relative partials/_sidebar.html %}
     <!-- End of Sidebar -->
 
     <!-- Content Wrapper -->
@@ -21,11 +23,11 @@ ${require('./partials/_head.html')}
       <div id="content">
 
         <!-- Topbar -->
-        ${require('./partials/_topbar_no_search.html')}
+        {% include_relative partials/_topbar_no_search.html %}
         <!-- End of Topbar -->
 
         <!-- Begin Page Content container-fluid -->
-        <div class="container-fluid">          
+        <div class="container-fluid">
           <!-- Page Heading -->
           <div class="d-sm-flex align-items-center justify-content-between mb-4">
             <h1 class="h3 mb-0 text-gray-800">RBAC Facets</h1>
@@ -40,7 +42,7 @@ ${require('./partials/_head.html')}
                 <div class="card-header py-3">
                   <h6 class="m-0 font-weight-bold text-primary">Search</h6>
                 </div>
-                 <!-- Card Body -->
+                <!-- Card Body -->
                 <div class="card-body">
                   <div class="form-group">
                     <label for="input-search" class="sr-only">Search:</label>
@@ -90,7 +92,8 @@ ${require('./partials/_head.html')}
               <div class="card shadow mb-4">
                 <!-- Card Header  -->
                 <div class="card-header py-3">
-                  <h6 class="m-0 font-weight-bold text-primary">NOTE: RBAC Facets *ONLY* shows Roles/ClusterRoles in use i.e. assigned to a Subject!</h6>
+                  <h6 class="m-0 font-weight-bold text-primary">NOTE: RBAC Facets *ONLY* shows Roles/ClusterRoles in use
+                    i.e. assigned to a Subject!</h6>
                 </div>
                 <!-- Card Body -->
                 <div class="card-body">
@@ -106,7 +109,7 @@ ${require('./partials/_head.html')}
       <!-- End of Main Content -->
 
       <!-- Footer -->
-      ${require('./partials/_footer.html')}
+      {% include_relative partials/_footer.html %}
       <!-- End of Footer -->
 
     </div>
@@ -120,10 +123,10 @@ ${require('./partials/_head.html')}
     <i class="fas fa-angle-up"></i>
   </a>
 
-  ${require('./partials/_scripts.html')}
-  
+  {% include_relative partials/_scripts.html %}
+
   <script src="vendor/stickyfilljs/stickyfill.min.js"></script>
-  <script src="vendor/bootstrap-treeview/bootstrap-treeview.js"></script>
+  <script src="vendor/bootstrap-treeview/bootstrap-treeview.min.js"></script>
   <script src="js/rbac-tree.min.js"></script>
 </body>
 

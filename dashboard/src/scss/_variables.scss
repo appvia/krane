@@ -4,6 +4,8 @@
 // Color Variables
 // Bootstrap Color Overrides
 
+@use 'sass:color';
+
 $white: #fff !default;
 $gray-100: #f8f9fc !default;
 $gray-200: #eaecf4 !default;
@@ -50,7 +52,7 @@ $box-shadow: 0 0.15rem 1.75rem 0 rgba($gray-900, .15) !default;
 
 // Borders Radius
 $border-radius: 0.35rem !default;
-$border-color: darken($gray-200, 2%);
+$border-color: color.adjust($gray-200, $lightness: -2%);
 
 // Spacing Variables
 // Change below variable if the height of the navbar changes

@@ -1,14 +1,16 @@
+{% raw %}
 <ul class="navbar-nav ml-auto">
 
   <!-- Nav Item - Alerts -->
-  <li class="nav-item dropdown no-arrow mx-1" id="alert-danger" v-if="items.length">
-    <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+  <li class="nav-item dropdown no-arrow mx-1" id="alert-danger" v-if="items.length > 0">
+    <a class="nav-link dropdown-toggle" href="danger.html" id="alertsDropdown" role="button" data-toggle="dropdown"
+      aria-haspopup="true" aria-expanded="false" :title="items.length + ' issue(s) detected'">
       <i class="fas fa-bell fa-fw"></i>
       <!-- Counter - Alerts -->
-      <span class="badge badge-danger badge-counter">{{ items.length }}</span>
+      <span class="badge bg-danger badge-counter">{{ items.length }}</span>
     </a>
     <!-- Dropdown - Alerts -->
-    <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="alertsDropdown">
+    <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="alertsDropdown">
       <h6 class="dropdown-header">
         Dangers detected
       </h6>
@@ -28,3 +30,4 @@
   </li>
 
 </ul>
+{% endraw %}
