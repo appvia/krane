@@ -71,7 +71,7 @@ module Krane
             #
             # @return [nil]
             def node kind, params
-              send("node_#{kind.downcase}".to_sym, params)
+              send("node_#{kind.downcase}".to_sym, **params)
             end
 
             # Creates :Role graph node for RBAC Role/ClusterRole

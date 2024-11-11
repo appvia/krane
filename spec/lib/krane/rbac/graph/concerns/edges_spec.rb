@@ -12,7 +12,7 @@ RSpec.shared_examples "an edge builder" do |args|
 
     expect(subject).to receive(:add_relation).with(*expected_args)
 
-    subject.send("edge_#{args[:relation].downcase}".to_sym, args[:params])
+    subject.send("edge_#{args[:relation].downcase}".to_sym, **args[:params])
   end
 
 end

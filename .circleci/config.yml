@@ -2,30 +2,27 @@
 version: 2.1
 
 orbs:
-  ruby: circleci/ruby@1.2.0
+  ruby: circleci/ruby@2.3.0
 
 executors:
   skaffold:
     docker:
-      - image: gcr.io/k8s-skaffold/skaffold:latest
+      - image: gcr.io/k8s-skaffold/skaffold:v2.13.2
 
 jobs:
   test:
-    parallelism: 1
     docker:
-      - image: ruby:2.7.6-alpine3.14
-        environment:
-          BUNDLE_JOBS: 10
-          BUNDLE_RETRY: 5
-          BUNDLE_PATH: vendor/bundle
-          KRANE_ENV: test
+      - image: cimg/ruby:3.2.2-node
+    parallelism: 3
+    environment:
+      BUNDLE_JOBS: 10
+      BUNDLE_RETRY: 5
+      BUNDLE_PATH: vendor/bundle
+      KRANE_ENV: test
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
-      - run:
-          name: Install system deps
-          command: apk add --update --no-cache git bash curl make gcc libc-dev tzdata g++ npm
       - run:
           name: Which bundler?
           command: bundle -v
@@ -47,6 +44,7 @@ jobs:
           name: Build artifacts w/ Skaffold
           command: |
             mkdir -p build
+            skaffold config set --global collect-metrics false
             skaffold build -p build-no-push --file-output build/${CIRCLE_SHA1}.json
       - persist_to_workspace:
           root: ~/project
@@ -64,6 +62,7 @@ jobs:
           command: |
             mkdir -p build
             docker login quay.io --username $DOCKER_USER --password $DOCKER_PASSWORD
+            skaffold config set --global collect-metrics false
             skaffold build -p build-and-push --file-output build/${CIRCLE_SHA1}.json
             # re-tag :latest
             skaffold_tag=$(cat build/${CIRCLE_SHA1}.json | jq -r '.builds[0].tag | split("@")[0]')
@@ -105,6 +104,7 @@ jobs:
             export SKAFFOLD_NAMESPACE=<<parameters.skaffold_namespace>>
 
             # Deploy with Skaffold - refers to artefacts built in previous step
+            skaffold config set --global collect-metrics false
             skaffold deploy --build-artifacts build/${CIRCLE_SHA1}.json
 
 workflows:

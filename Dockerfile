@@ -15,7 +15,7 @@
 
 ##############################################################
 # Stage: builder
-FROM ruby:2.7.6-alpine3.16 AS builder
+FROM ruby:3.2.2-alpine3.16 AS builder
 
 WORKDIR /app
 
@@ -47,7 +47,7 @@ RUN cd dashboard && jekyll build --trace -s ./src/html -d ./tmp && cp ./tmp/*.ht
 
 ##############################################################
 # Stage: final
-FROM ruby:2.7.6-alpine3.16
+FROM ruby:3.2.2-alpine3.16
 
 LABEL org="Appvia Ltd"
 LABEL website="appvia.io"

@@ -61,12 +61,13 @@ module Krane
               info "-- Indexing [#{binding_kind}] #{binding_name}"
               
               # If role in binding hasn't been defined then it should be recorded
-              register_undefined_role({
+              attrs = {
                 role_kind:    role_kind, 
                 role_name:    role_name, 
                 binding_kind: binding_kind, 
                 binding_name: binding_name 
-              })
+              }
+              register_undefined_role(**attrs)
               
               if namespace.present?
                 node :namespace, { name: namespace }
@@ -81,13 +82,14 @@ module Krane
 
               # Iterate thorugh subjects
               binding['subjects'].each do |subject|
-                set_subject_relations({
+                attrs = {
                   subject:   subject,
                   role_kind: role_kind,
                   role_name: role_name
                 }.tap {|h|
                   h[:binding_namespace] = namespace if namespace.present?
-                })
+                }
+                set_subject_relations(**attrs)
               end
 
               set_relation_between_any_two_subjects(subjects: binding['subjects'])
