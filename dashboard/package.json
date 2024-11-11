@@ -3,7 +3,7 @@
     "name": "kubernetes-rbac-inspector",
     "version": "1.0.0",
     "scripts": {
-        "start": "node_modules/.bin/gulp watch",
+        "start": "node_modules/.bin/gulp clean && node_modules/.bin/gulp watch",
         "preinstall": "npx npm-force-resolutions"
     },
     "description": "Kubernetes RBAC security risk inspector",
@@ -22,33 +22,29 @@
         "node": "^14.17.6"
     },
     "dependencies": {
+        "@babel/core": "7.26.0",
+        "@babel/preset-env": "7.26.0",
         "@egjs/hammerjs": "^2.0.0",
-        "@fortawesome/fontawesome-free": "5.15.4",
+        "@fortawesome/fontawesome-free": "6.6.0",
         "@popperjs/core": "^2.11.8",
         "bootstrap": "^5.3.3",
         "browser-sync": "^3.0.3",
         "chart.js": "3.5.1",
-        "chokidar": "^3.5.3",
         "del": "8.0.0",
         "express": "^4.18.2",
         "gulp": "5.0.0",
-        "gulp-autoprefixer": "9.0.0",
         "gulp-babel": "8.0.0",
         "gulp-clean-css": "4.3.0",
         "gulp-exec": "5.0.0",
-        "gulp-header": "2.0.9",
         "gulp-plumber": "^1.2.1",
         "gulp-rename": "2.0.0",
         "gulp-sass": "^5.0.0",
-        "gulp-postcss": "10.0.0",
         "gulp-uglify": "3.0.2",
-        "html-includes": "^5.0.0",
         "jquery": "^3.6.0",
         "jquery.easing": "^1.4.1",
         "keycharm": "^0.4.0",
         "lodash": "^4.17.21",
-        "merge-stream": "2.0.0",
-        "patternfly-bootstrap-treeview": "^1.0.1",
+        "patternfly-bootstrap-treeview": "2.1.10",
         "prismjs": "^1.27.0",
         "sass": "1.80.6",
         "stickyfilljs": "2.1.0",
@@ -60,16 +56,9 @@
         "vue": "^3.5.12",
         "vue-popperjs": "2.3.0"
     },
-    "devDependencies": {
-        "@babel/core": "7.15.5",
-        "babel-preset-env": "^0.0.0",
-        "set-value": ">=4.0.1"
-    },
     "overrides": {
-        "chokidar": "^3.5.3",
-        "glob-stream": "^7.0.0",
-        "glob-parent": "^6.0.2",
-        "micromatch": "^4.0.0",
-        "ua-parser-js": "^1.0.33"
+        "patternfly-bootstrap-treeview": {
+            "bootstrap": "^5.3.3"
+        }
     }
 }

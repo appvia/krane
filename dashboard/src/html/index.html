@@ -1,7 +1,9 @@
+---
+---
 <!DOCTYPE html>
 <html lang="en">
 
-${require('./partials/_head.html')}
+{% include_relative partials/_head.html %}
 
 <body id="page-top">
 
@@ -9,7 +11,7 @@ ${require('./partials/_head.html')}
   <div id="wrapper">
 
     <!-- Sidebar -->
-    ${require('./partials/_sidebar.html')}
+    {% include_relative partials/_sidebar.html %}
     <!-- End of Sidebar -->
 
     <!-- Content Wrapper -->
@@ -19,7 +21,7 @@ ${require('./partials/_head.html')}
       <div id="content">
 
         <!-- Topbar -->
-        ${require('./partials/_topbar.html')}
+        {% include_relative partials/_topbar.html %}
         <!-- End of Topbar -->
 
         <!-- Begin Page Content container-fluid -->
@@ -140,7 +142,9 @@ ${require('./partials/_head.html')}
                     </span>
                   </a>
                   <div class="my-2"></div>
-                  With RBAC Facets you can inspect various aspects of RBAC e.g. Namespaces, Actors (Subjects), associated Roles and Cluster Roles as well as Rerources. NOTE: Tree only shows roles which are in use i.e. assigned to a subject!
+                  With RBAC Facets you can inspect various aspects of RBAC e.g. Namespaces, Actors (Subjects),
+                  associated Roles and Cluster Roles as well as Resources. NOTE: Tree only shows roles which are in use
+                  i.e. assigned to a subject!
 
                   <div class="my-4"></div>
                   <a href="graph.html" class="btn btn-light btn-icon-split">
@@ -153,7 +157,8 @@ ${require('./partials/_head.html')}
                     </span>
                   </a>
                   <div class="my-2"></div>
-                  Presents simplified RBAC graph reduced to Namespaces, Actors and Roles attached to them. Graph will visually highlight orphan nodes.
+                  Presents simplified RBAC graph reduced to Namespaces, Actors and Roles attached to them. Graph will
+                  visually highlight orphan nodes.
 
 
                 </div>
@@ -167,7 +172,7 @@ ${require('./partials/_head.html')}
                 <div class="card-header py-3">
                   <h6 class="m-0 font-weight-bold text-primary">Security checks</h6>
                 </div>
-                 <!-- Card Body -->
+                <!-- Card Body -->
                 <div class="card-body">
                   <div class="chart-pie pt-4 pb-2">
                     <canvas id="scanPieChart"></canvas>
@@ -197,7 +202,7 @@ ${require('./partials/_head.html')}
       <!-- End of Main Content -->
 
       <!-- Footer -->
-      ${require('./partials/_footer.html')}
+      {% include_relative partials/_footer.html %}
       <!-- End of Footer -->
 
     </div>
@@ -211,7 +216,7 @@ ${require('./partials/_head.html')}
     <i class="fas fa-angle-up"></i>
   </a>
 
-  ${require('./partials/_scripts.html')}
+  {% include_relative partials/_scripts.html %}
   <!-- Page level plugins -->
   <script src="vendor/chart.js/chart.min.js"></script>
 

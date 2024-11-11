@@ -1,6 +1,7 @@
 .DS_Store
 .bundle
 .circleci/
+.jekyll-cache/
 .vscode
 .git
 .gitignore
@@ -16,3 +17,4 @@ skaffold.yaml
 /k8s
 /spec
 /tmp
+/dashboard/node_modules

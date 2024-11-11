@@ -14,10 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-$(function() {
+$(function () {
 
   // Load RBAC findings
-  $.getJSON("data/" + $.urlParam('cluster') + "/rbac-findings.json", function(findings) {
+  $.getJSON("data/" + $.urlParam('cluster') + "/rbac-findings.json", function (findings) {
 
     // findings
     new Vue({
@@ -26,7 +26,7 @@ $(function() {
         items: findings['results'],
       },
       methods: {
-        filteredList: function(status) {
+        filteredList: function (status) {
           return this.items.filter(item => {
             return item.status === status
           })
@@ -44,11 +44,11 @@ $(function() {
       }
     });
 
-    $.each(findings['summary'], function(key, value) {
+    $.each(findings['summary'], function (key, value) {
       $(`#${key}-count`).html(value);
     });
 
-    $('[data-toggle="tooltip"]').tooltip();
+    $('[data-bs-toggle="tooltip"]').tooltip();
 
     // Pie Chart
     var ctx = $('#scanPieChart');

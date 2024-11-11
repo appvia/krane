@@ -1,7 +1,9 @@
+---
+---
 <!DOCTYPE html>
 <html lang="en">
 
-${require('./partials/_head.html')}
+{% include_relative partials/_head.html %}
 
 <body id="page-top">
 
@@ -9,7 +11,7 @@ ${require('./partials/_head.html')}
   <div id="wrapper">
 
     <!-- Sidebar -->
-    ${require('./partials/_sidebar.html')}
+    {% include_relative partials/_sidebar.html %}
     <!-- End of Sidebar -->
 
     <!-- Content Wrapper -->
@@ -19,14 +21,14 @@ ${require('./partials/_head.html')}
       <div id="content">
 
         <!-- Topbar -->
-        ${require('./partials/_topbar.html')}
+        {% include_relative partials/_topbar.html %}
         <!-- End of Topbar -->
 
         <!-- Begin Page Content container-fluid -->
-        <div class="container-fluid">          
+        <div class="container-fluid">
           <h1 class="h3 mb-2 text-gray-800">RBAC Graph</h1>
           <p class="mb-4">
-            
+
           </p>
 
           <div class="card shadow mb-4">
@@ -44,7 +46,7 @@ ${require('./partials/_head.html')}
       <!-- End of Main Content -->
 
       <!-- Footer -->
-      ${require('./partials/_footer.html')}
+      {% include_relative partials/_footer.html %}
       <!-- End of Footer -->
 
     </div>
@@ -58,7 +60,7 @@ ${require('./partials/_head.html')}
     <i class="fas fa-angle-up"></i>
   </a>
 
-  ${require('./partials/_scripts.html')}
+  {% include_relative partials/_scripts.html %}
   <script src="vendor/vis-network/vis-network.min.js"></script>
   <script src="js/rbac-network.min.js"></script>
 </body>
