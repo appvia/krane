@@ -14,8 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-const express = require('express')
-const serveStatic = require('serve-static')
+import express from 'express';
+import serveStatic from 'serve-static';
 
 const app = express()
 const port = process.env.port || 8000
