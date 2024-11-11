@@ -32,8 +32,18 @@ RUN bundle config set deployment 'true'
 RUN bundle config set without 'development test'
 RUN bundle install --jobs 20 --retry 5
 
-# build the UI
-RUN cd dashboard && npm install --omit=optional --omit=dev && npm audit fix && npm rebuild node-sass && npm install -g sass-migrator && sass-migrator division **/*.scss && node_modules/.bin/gulp release
+# build the dashboard elements
+RUN cd dashboard && npm install --omit=optional --omit=dev && npm audit fix && npm rebuild node-sass && npm install -g sass-migrator && sass-migrator division **/*.scss && rm -rf ./compiled && node_modules/.bin/gulp build
+
+##############################################################
+# Stage: jekyll -- generate dashboard html files
+FROM jekyll/jekyll:4.2.0 AS jekyll
+
+WORKDIR /app
+
+COPY --from=builder --chown=jekyll:jekyll /app /app
+
+RUN cd dashboard && jekyll build --trace -s ./src/html -d ./tmp && cp ./tmp/*.html ./compiled && rm -rf ./tmp
 
 ##############################################################
 # Stage: final
@@ -59,7 +69,7 @@ RUN addgroup -g 1000 -S appuser \
 USER 1000
 
 COPY --from=builder /usr/local/bundle/ /usr/local/bundle/
-COPY --from=builder --chown=1000:1000 /app $APP_PATH
+COPY --from=jekyll --chown=1000:1000 /app $APP_PATH
 
 WORKDIR $APP_PATH
 
@@ -70,3 +80,4 @@ ENV PATH $APP_PATH/bin:$PATH
 
 ENTRYPOINT ["bin/krane"]
 CMD ["report", "--incluster"]
+
