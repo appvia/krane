@@ -106,7 +106,7 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Nodes do
 
         it 'creates :Role graph node for RBAC Role/ClusterRole' do
           expect(subject).to receive(:add_node).with(:Role, label, role_attrs)
-          subject.send(:node_role, role_attrs)
+          subject.send(:node_role, **role_attrs)
         end
 
       end

@@ -70,7 +70,7 @@ module Krane
             #
             # @return [nil]
             def edge kind, params
-              send("edge_#{kind.downcase}".to_sym, params)
+              send("edge_#{kind.downcase}".to_sym, **params)
             end
 
             # Adds :SCOPE edge between :Role (Role/ClusterRole) and :Namespace nodes
