@@ -61,7 +61,7 @@ jobs:
           name: Build & Push artifacts w/ Skaffold
           command: |
             mkdir -p build
-            docker login quay.io --username $DOCKER_USER --password-stdin $DOCKER_PASSWORD
+            echo "$DOCKER_PASSWORD" | docker login quay.io --username "$DOCKER_USER" --password-stdin
             skaffold config set --global collect-metrics false
             skaffold build -p build-and-push --file-output build/${CIRCLE_SHA1}.json
             # re-tag :latest
