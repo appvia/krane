@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: skaffold/v2beta1
+apiVersion: skaffold/v4beta11
 kind: Config
 metadata:
   name: krane
@@ -36,9 +36,8 @@ build:
       - src: 'lib/**/*.rb'
         dest: '/app'
 
-deploy:
-  kubectl:
-    manifests:
+manifests:
+  rawYaml:
     - k8s/*.yaml
 
 profiles:
@@ -50,6 +49,7 @@ profiles:
     - env: CLUSTER=minikube
     - kubeContext: minikube
   deploy:
+    kubectl: {}
     kubeContext: minikube
 
 - name: local-desktop
@@ -58,6 +58,7 @@ profiles:
     - kubeContext: docker-desktop
     - kubeContext: docker-for-desktop
   deploy:
+    kubectl: {}
     kubeContext: docker-desktop
 
 # CI Build phase profiles
