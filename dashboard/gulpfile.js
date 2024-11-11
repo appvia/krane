@@ -288,9 +288,9 @@ function compileHtml(done) {
 
 // Define complex tasks
 const vendor = series(clean, modules);
-const build = series(vendor, parallel(css, js, compileHtml));
+const build = series(vendor, parallel(css, js));
 const release = series(build, compileHtml);
-const watcher = series(clean, build, parallel(watchFiles, browserSync));
+const watcher = series(release, parallel(watchFiles, browserSync));
 
 export { clean, css, js, vendor, build, compileHtml, watcher as watch, release };
 
