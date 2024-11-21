@@ -137,6 +137,21 @@ spec:
             timeoutSeconds: 5
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.config }}
+          volumeMounts:
+          - name: config-volume
+            mountPath: /app/config/config.yaml
+            subPath: config.yaml
+          - name: config-volume
+            mountPath: /app/config/custom-rules.yaml
+            subPath: custom-rules.yaml
+          - name: config-volume
+            mountPath: /app/config/rules.yaml
+            subPath: rules.yaml
+          - name: config-volume
+            mountPath: /app/config/whitelist.yaml
+            subPath: whitelist.yaml
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -150,3 +165,10 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       restartPolicy: Always
+      {{- if .Values.config }}
+      volumes:
+      - name: config-volume
+        configMap:
+          name: {{ include "krane.fullname" . }}
+      {{- end }}
+
