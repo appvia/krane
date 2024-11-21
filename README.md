@@ -1,3 +1,5 @@
+<img width="300" src="https://appvia.io/hubfs/Logos/appviaLogoHorizontal.svg" alt="Appvia logo" />
+
 # Krane
 
 > Kubernetes RBAC Analysis made Easy
