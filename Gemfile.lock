@@ -271,7 +271,7 @@ GEM
       faraday-follow_redirects
     terminal-table (3.0.2)
       unicode-display_width (>= 1.1.1, < 3)
-    test-unit (3.6.3)
+    test-unit (3.6.5)
       power_assert
     timeout (0.4.2)
     tzinfo (2.0.6)
