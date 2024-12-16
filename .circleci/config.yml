@@ -53,17 +53,37 @@ jobs:
 
   build_and_push:
     executor: skaffold
+    environment:
+      DOCKER_BUILDKIT: 1
+      BUILDX_PLATFORMS: linux/amd64,linux/arm64
     steps:
       - checkout
       - setup_remote_docker:
           docker_layer_caching: true
+      - run:
+          name: Install buildx
+          command: |
+            BUILDX_BINARY_URL="https://github.com/docker/buildx/releases/download/v0.19.2/buildx-v0.19.2.linux-amd64"
+
+            curl --output docker-buildx \
+              --silent --show-error --location --fail --retry 3 \
+              "$BUILDX_BINARY_URL"
+
+            mkdir -p ~/.docker/cli-plugins
+
+            mv docker-buildx ~/.docker/cli-plugins/
+            chmod a+x ~/.docker/cli-plugins/docker-buildx
+
+            docker buildx install
+            # Run binfmt
+            docker run --rm --privileged tonistiigi/binfmt:latest --install "$BUILDX_PLATFORMS"         
       - run:
           name: Build & Push artifacts w/ Skaffold
           command: |
             mkdir -p build
             echo "$DOCKER_PASSWORD" | docker login quay.io --username "$DOCKER_USER" --password-stdin
             skaffold config set --global collect-metrics false
-            skaffold build --platform=linux/arm64,linux/amd64 -p build-and-push --file-output build/${CIRCLE_SHA1}.json
+            skaffold build --platform=${BUILDX_PLATFORMS} -p build-and-push --file-output build/${CIRCLE_SHA1}.json
             # re-tag :latest
             skaffold_tag=$(cat build/${CIRCLE_SHA1}.json | jq -r '.builds[0].tag | split("@")[0]')
             skaffold_image=$(cat build/${CIRCLE_SHA1}.json | jq -r '.builds[0].imageName')
