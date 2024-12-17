@@ -39,7 +39,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          docker_layer_caching: false       
+          docker_layer_caching: true
       - run:
           name: Build artifacts w/ Skaffold
           command: |
@@ -59,7 +59,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker:
-          docker_layer_caching: false
+          docker_layer_caching: true
       - run:
           name: Install buildx
           command: |
@@ -88,8 +88,9 @@ jobs:
             cat build/${CIRCLE_SHA1}.json
             skaffold_tag=$(cat build/${CIRCLE_SHA1}.json | jq -r '.builds[0].tag | split("@")[0]')
             skaffold_image=$(cat build/${CIRCLE_SHA1}.json | jq -r '.builds[0].imageName')
-            docker images
+            docker pull ${skaffold_tag}
             docker tag ${skaffold_tag} ${skaffold_image}:latest
+            docker images
             docker push ${skaffold_image}:latest
       - persist_to_workspace:
           root: ~/project
