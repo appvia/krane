@@ -17,9 +17,8 @@ limitations under the License.
 "use strict";
 
 // Load plugins
+import nodemon from 'nodemon';
 import babel from 'gulp-babel';
-import * as bs from 'browser-sync';
-const browsersync = bs.create();
 import cleanCSS from "gulp-clean-css";
 import { deleteAsync } from 'del';
 import { exec } from 'child_process';
@@ -43,24 +42,6 @@ import uglify from "gulp-uglify";
 //   ' */\n',
 //   '\n'
 // ].join('');
-
-// BrowserSync
-function browserSync(done) {
-  browsersync.init({
-    server: {
-      baseDir: "./compiled"
-    },
-    serveStatic: ['./compiled', './compiled/vendor'],
-    port: 3000
-  });
-  done();
-}
-
-// BrowserSync reload
-function browserSyncReload(done) {
-  browsersync.reload();
-  done();
-}
 
 // Clean vendor
 function clean() {
@@ -241,7 +222,6 @@ function css() {
     }))
     .pipe(cleanCSS())
     .pipe(dest("./compiled/css"))
-    .pipe(browsersync.stream());
 }
 
 // JS task
@@ -261,8 +241,7 @@ function js() {
     .pipe(rename({
       suffix: '.min'
     }))
-    .pipe(dest('./compiled/js'))
-    .pipe(browsersync.stream());
+    .pipe(dest('./compiled/js'));
 }
 
 // Watch files
@@ -270,7 +249,7 @@ function watchFiles(done) {
   async () => {
     watch("./src/scss/**/*", css);
     watch(["./src/js/**/*", "!./src/js/**/*.min.js"], js);
-    watch("./src/html/**/*.html", series(compileHtml, browserSyncReload));
+    watch("./src/html/**/*.html", compileHtml);
   }
   done();
 }
@@ -286,11 +265,37 @@ function compileHtml(done) {
   });
 }
 
+
+function develop(done) {
+  var stream = nodemon({
+    script: './dashboard.js',
+    watch: ['./src'], // watch source changes
+    ext: 'html js css yaml json', // watched files extensions
+    done: done
+  })
+
+  stream
+    .on('restart', function () {
+      // rebuild js, css and html
+      js();
+      css();
+      compileHtml();
+
+      console.log('---------')
+      console.log('- Changes detected and application restarted! Refresh your browser to see changes.')
+      console.log('---------')
+    })
+    .on('crash', function () {
+      console.error('Application has crashed!\n')
+      stream.emit('restart', 10)  // restart the server in 10 seconds
+    })
+}
+
 // Define complex tasks
 const vendor = series(clean, modules);
 const build = series(vendor, parallel(css, js));
 const release = series(build, compileHtml);
-const watcher = series(release, parallel(watchFiles, browserSync));
+const watcher = series(release, develop);
 
 export { clean, css, js, vendor, build, compileHtml, watcher as watch, release };
 
