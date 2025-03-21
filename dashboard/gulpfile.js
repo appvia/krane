@@ -23,7 +23,7 @@ import cleanCSS from "gulp-clean-css";
 import { deleteAsync } from 'del';
 import { exec } from 'child_process';
 import { src, dest, watch, series, parallel } from "gulp";
-// import header from "gulp-header";
+import header from "gulp-header";
 import plumber from "gulp-plumber";
 import rename from "gulp-rename";
 import gulpSass from 'gulp-sass';
@@ -32,16 +32,16 @@ const sass = gulpSass(s);
 import uglify from "gulp-uglify";
 
 // Load package.json for banner
-// import pkg from './package.json' assert { type: "json" };
+import pkg from './package.json' assert { type: "json" };
 
-// // Set the banner content
-// const banner = ['/*!\n',
-//   ' * Start Bootstrap - <%= pkg.title %> v<%= pkg.version %> (<%= pkg.homepage %>)\n',
-//   ' * Copyright 2019-' + (new Date()).getFullYear(), ' <%= pkg.author %>\n',
-//   ' * Licensed under <%= pkg.license %> (https://github.com/appvia/<%= pkg.name %>/blob/master/LICENSE)\n',
-//   ' */\n',
-//   '\n'
-// ].join('');
+// Set the banner content
+const banner = ['/*!\n',
+  ' * <%= pkg.title %> v<%= pkg.version %> (<%= pkg.homepage %>)\n',
+  ' * Copyright 2019-' + (new Date()).getFullYear(), ' <%= pkg.author %>\n',
+  ' * Licensed under <%= pkg.license %> (https://github.com/appvia/<%= pkg.name %>/blob/master/LICENSE)\n',
+  ' */\n',
+  '\n'
+].join('');
 
 // Clean vendor
 function clean() {
@@ -213,9 +213,9 @@ function css() {
       includePaths: "./node_modules",
     }))
     .on("error", sass.logError)
-    // .pipe(header(banner, {
-    //   pkg: pkg
-    // }))
+    .pipe(header(banner, {
+      pkg: pkg
+    }))
     .pipe(dest("./compiled/css"))
     .pipe(rename({
       suffix: ".min"
@@ -235,9 +235,9 @@ function js() {
       presets: ['@babel/preset-env']
     }))
     .pipe(uglify())
-    // .pipe(header(banner, {
-    //   pkg: pkg
-    // }))
+    .pipe(header(banner, {
+      pkg: pkg
+    }))
     .pipe(rename({
       suffix: '.min'
     }))
