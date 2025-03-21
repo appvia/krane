@@ -18,9 +18,9 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    activemodel (8.0.1)
-      activesupport (= 8.0.1)
-    activesupport (8.0.1)
+    activemodel (8.0.2)
+      activesupport (= 8.0.2)
+    activesupport (8.0.2)
       base64
       benchmark (>= 0.3)
       bigdecimal
@@ -146,7 +146,7 @@ GEM
     llhttp-ffi (0.5.0)
       ffi-compiler (~> 1.0)
       rake (~> 13.0)
-    logger (1.6.5)
+    logger (1.6.6)
     mail (2.8.1)
       mini_mime (>= 0.1.1)
       net-imap
