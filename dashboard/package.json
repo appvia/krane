@@ -30,7 +30,7 @@
         "bootstrap": "^5.3.3",
         "chart.js": "3.5.1",
         "del": "8.0.0",
-        "express": "^4.21.2",
+        "express": "^4.22.0",
         "gulp": "5.0.0",
         "gulp-babel": "8.0.0",
         "gulp-clean-css": "4.3.0",
