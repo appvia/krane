@@ -280,6 +280,75 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Roles do
 
       end
 
+      # Namespaced Roles are identified by kind+name alone, so two Roles sharing a
+      # name in different namespaces collapse into a single graph node and their
+      # access rules are merged. Role names are only unique within a namespace, so
+      # this is the common case in any multi-tenant cluster, not an edge case.
+      context 'with two namespaced Roles sharing a name across different namespaces' do
+
+        let(:privileged_role) do
+          build(:role,
+            name:             'developer',
+            namespace:        'team-a',
+            resource_version: '111',
+            rules:            build_list(:resource_rule, 1,
+                                api_groups:     ['*'],
+                                resources:      ['*'],
+                                resource_names: nil,
+                                verbs:          ['*']))
+        end
+
+        let(:restricted_role) do
+          build(:role,
+            name:             'developer',
+            namespace:        'team-b',
+            resource_version: '222',
+            rules:            build_list(:resource_rule, 1,
+                                api_groups:     [''],
+                                resources:      ['pods'],
+                                resource_names: nil,
+                                verbs:          ['get']))
+        end
+
+        before do
+          subject.send(:setup_role, role_kind: :Role, role: privileged_role)
+          subject.send(:setup_role, role_kind: :Role, role: restricted_role)
+        end
+
+        it 'creates a distinct :Role graph node for each namespace' do
+          role_nodes = subject.instance_variable_get(:@node_buffer).select {|n| n[:kind] == :Role}
+
+          expect(role_nodes.map(&:label).uniq.size).to eq 2
+        end
+
+        it 'does not merge the access rules of the two Roles onto one node' do
+          # Each Role grants exactly one rule, so each :Role label must appear
+          # exactly once as the source of a :GRANT edge. A shared label means
+          # team-b's Role also reaches the wildcard rule defined in team-a.
+          grant_sources = subject.instance_variable_get(:@edge_buffer)
+                                 .select {|e| e.relation == :GRANT}
+                                 .map(&:source_label)
+
+          expect(grant_sources.tally.values).to all(eq 1)
+        end
+
+        it 'does not bind the same graph variable twice in the CREATE statement' do
+          # openCypher forbids redeclaring a bound variable within a single CREATE.
+          declared = subject.send(:nodes).join(',').scan(/\((n\d+):Role/).flatten
+
+          expect(declared).to eq declared.uniq
+        end
+
+        it 'tracks the namespace of each Role separately' do
+          # @role_ns_lookup is keyed by role name alone, so team-a's entry is
+          # silently overwritten by team-b's.
+          role_ns_lookup = subject.instance_variable_get(:@role_ns_lookup)
+
+          expect(role_ns_lookup.values.uniq).to contain_exactly('team-a', 'team-b')
+        end
+
+      end
+
       context 'with cluster role with aggregationRule defined' do
 
         let(:role_kind) { :ClusterRole }

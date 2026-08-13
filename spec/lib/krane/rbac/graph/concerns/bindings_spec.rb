@@ -223,8 +223,8 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Bindings do
           allow(subject).to receive(:edge).and_call_original
         end
 
-        it 'sets a :RELATION edge between any two subjects' do          
-          expect(subject).to receive(:edge).with(:relation, { 
+        it 'sets a :RELATION edge between any two subjects' do
+          expect(subject).to receive(:edge).with(:relation, {
             a_subject_kind: binding[:subjects].first[:kind],
             a_subject_name: binding[:subjects].first[:name],
             b_subject_kind: binding[:subjects].last[:kind],
@@ -233,6 +233,41 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Bindings do
 
           # call
           subject.send(:setup_binding, binding_kind: binding_kind, binding: binding)
+        end
+
+      end
+
+      # ServiceAccounts are namespaced, so `default` in kube-system and `default`
+      # in an application namespace are separate principals with separate
+      # privileges. Subjects are identified by kind+name alone, and the
+      # `namespace` supplied on the binding subject is never read, so every
+      # same-named ServiceAccount in the cluster merges into one graph node.
+      context 'for ServiceAccount subjects sharing a name across different namespaces' do
+
+        let(:binding_kind) { :ClusterRoleBinding }
+
+        let(:binding) do
+          build(:binding, :for_cluster_role,
+            subjects: [
+              build(:subject, :service_account, name: 'default', namespace: 'kube-system'),
+              build(:subject, :service_account, name: 'default', namespace: 'myapp')
+            ])
+        end
+
+        before do
+          subject.send(:setup_binding, binding_kind: binding_kind, binding: binding)
+        end
+
+        it 'creates a distinct :Subject graph node for each namespace' do
+          subject_nodes = subject.instance_variable_get(:@node_buffer).select {|n| n[:kind] == :Subject}
+
+          expect(subject_nodes.map(&:label).uniq.size).to eq 2
+        end
+
+        it 'records the namespace on each :Subject node' do
+          subject_nodes = subject.instance_variable_get(:@node_buffer).select {|n| n[:kind] == :Subject}
+
+          expect(subject_nodes.map {|n| n.attrs[:namespace]}).to contain_exactly('kube-system', 'myapp')
         end
 
       end
