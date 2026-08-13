@@ -33,7 +33,11 @@ RUN bundle config set without 'development test'
 RUN bundle install --jobs 20 --retry 5
 
 # build the dashboard elements
-RUN cd dashboard && npm install --omit=optional --omit=dev && npm audit fix && npm rebuild node-sass && npm install -g sass-migrator && sass-migrator division **/*.scss && rm -rf ./compiled && node_modules/.bin/gulp build
+# Do not add `npm audit fix` here: it rewrites the dependency tree at build time and exits
+# non-zero when advisories need --force, breaking the build on unchanged code.
+# Do not add `--omit=dev`: gulpfile.js imports nodemon at the top level, so gulp cannot load
+# without devDependencies.
+RUN cd dashboard && npm ci --omit=optional && npm install -g sass-migrator && sass-migrator division **/*.scss && rm -rf ./compiled && node_modules/.bin/gulp build
 
 ##############################################################
 # Stage: jekyll -- generate dashboard html files
