@@ -105,12 +105,13 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Roles do
         end
 
         it 'creates :Role graph node' do
-          expect(subject).to receive(:node).with(:role, { 
-            kind:          role_kind, 
-            name:          role[:metadata][:name], 
-            is_default:    false, 
+          expect(subject).to receive(:node).with(:role, {
+            kind:          role_kind,
+            name:          role[:metadata][:name],
+            namespace:     role[:metadata][:namespace],
+            is_default:    false,
             is_composite:  false,
-            is_aggregable: false, 
+            is_aggregable: false,
             aggregable_by: '',
             version:       role[:metadata][:resourceVersion],
             created_at:    role[:metadata][:creationTimestamp]
@@ -132,10 +133,11 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Roles do
         end
 
         it 'creates :GRANT graph edge between :Role and :Rule nodes' do
-          expect(subject).to receive(:edge).with(:grant, { 
-            role_kind: role_kind, 
-            role_name: role[:metadata][:name], 
-            rule:      subject.process_resource_rule(role[:rules].first).first
+          expect(subject).to receive(:edge).with(:grant, {
+            role_kind: role_kind,
+            role_name: role[:metadata][:name],
+            rule:      subject.process_resource_rule(role[:rules].first).first,
+            namespace: role[:metadata][:namespace]
           })
         end
 
@@ -155,13 +157,16 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Roles do
         defined_roles  = subject.instance_variable_get(:@defined_roles)
         default_roles  = subject.instance_variable_get(:@default_roles)
 
+        # A role name is only unique within a namespace, so the lookup maps a name to the
+        # set of namespaces it is defined in.
         expect(role_ns_lookup).to include(
-          role[:metadata][:name] => role[:metadata][:namespace]
+          role[:metadata][:name] => Set[role[:metadata][:namespace]]
         )
 
         expect(defined_roles).to include(
-          role_kind: :Role,
-          role_name: role[:metadata][:name]
+          role_kind:      :Role,
+          role_name:      role[:metadata][:name],
+          role_namespace: role[:metadata][:namespace]
         )
 
         expect(default_roles).to be_empty
@@ -233,8 +238,9 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Roles do
 
           default_roles = subject.instance_variable_get(:@default_roles)
           expect(default_roles).to include(
-            role_kind: :Role,
-            role_name: role[:metadata][:name]
+            role_kind:      :Role,
+            role_name:      role[:metadata][:name],
+            role_namespace: role[:metadata][:namespace]
           )
         end
 
@@ -276,6 +282,76 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Roles do
             'admin' => [ role[:metadata][:name] ],
             'edit'  => [ role[:metadata][:name] ],
           )
+        end
+
+      end
+
+      # Namespaced Roles are identified by kind+name alone, so two Roles sharing a
+      # name in different namespaces collapse into a single graph node and their
+      # access rules are merged. Role names are only unique within a namespace, so
+      # this is the common case in any multi-tenant cluster, not an edge case.
+      context 'with two namespaced Roles sharing a name across different namespaces' do
+
+        let(:privileged_role) do
+          build(:role,
+            name:             'developer',
+            namespace:        'team-a',
+            resource_version: '111',
+            rules:            build_list(:resource_rule, 1,
+                                api_groups:     ['*'],
+                                resources:      ['*'],
+                                resource_names: nil,
+                                verbs:          ['*']))
+        end
+
+        let(:restricted_role) do
+          build(:role,
+            name:             'developer',
+            namespace:        'team-b',
+            resource_version: '222',
+            rules:            build_list(:resource_rule, 1,
+                                api_groups:     [''],
+                                resources:      ['pods'],
+                                resource_names: nil,
+                                verbs:          ['get']))
+        end
+
+        before do
+          subject.send(:setup_role, role_kind: :Role, role: privileged_role)
+          subject.send(:setup_role, role_kind: :Role, role: restricted_role)
+        end
+
+        it 'creates a distinct :Role graph node for each namespace' do
+          role_nodes = subject.instance_variable_get(:@node_buffer).select {|n| n[:kind] == :Role}
+
+          expect(role_nodes.map(&:label).uniq.size).to eq 2
+        end
+
+        it 'does not merge the access rules of the two Roles onto one node' do
+          # Each Role grants exactly one rule, so each :Role label must appear
+          # exactly once as the source of a :GRANT edge. A shared label means
+          # team-b's Role also reaches the wildcard rule defined in team-a.
+          grant_sources = subject.instance_variable_get(:@edge_buffer)
+                                 .select {|e| e.relation == :GRANT}
+                                 .map(&:source_label)
+
+          expect(grant_sources.tally.values).to all(eq 1)
+        end
+
+        it 'does not bind the same graph variable twice in the CREATE statement' do
+          # openCypher forbids redeclaring a bound variable within a single CREATE.
+          declared = subject.send(:nodes).join(',').scan(/\((n\d+):Role/).flatten
+
+          expect(declared).to eq declared.uniq
+        end
+
+        it 'tracks every namespace the Role name is defined in' do
+          # @role_ns_lookup is keyed by role name, which is only unique within a namespace.
+          # Holding a single namespace per name meant team-a was silently overwritten by
+          # team-b, so the lookup holds the set of namespaces instead.
+          role_ns_lookup = subject.instance_variable_get(:@role_ns_lookup)
+
+          expect(role_ns_lookup.values.flat_map(&:to_a)).to contain_exactly('team-a', 'team-b')
         end
 
       end

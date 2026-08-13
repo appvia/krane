@@ -78,6 +78,8 @@ module Krane
             #
             # @param kind [Symbol] - kind of node to be created
             # @param name [String] - kind of node to be created
+            # @param namespace [String] - the role's own namespace. Part of the node identity
+            #                             for :Role; ignored for the cluster scoped :ClusterRole.
             # @param version [String] - kind of node to be created
             # @param created_at [String] - kind of node to be created
             # @param defined [Bool] - kind of node to be created
@@ -87,9 +89,9 @@ module Krane
             # @param aggregable_by [String] - options for given node kind
             #
             # @return [nil]
-            def node_role(kind:, name:, version: nil, created_at: nil, defined: true, 
+            def node_role(kind:, name:, namespace: nil, version: nil, created_at: nil, defined: true,
                 is_default: false, is_composite: false, is_aggregable: false, aggregable_by: '')
-              label = make_label kind, name
+              label = label_for kind, name, namespace
 
               # build a hash attributes for the node automatically
               attrs = (local_variables - [:label, :attrs]).each_with_object({}) do |p, hsh|
@@ -139,11 +141,14 @@ module Krane
             #
             # @param kind [Symbol] - RBAC Subject kind (:User, :Group, :ServiceAccount)
             # @param name [String] - subject name
+            # @param namespace [String] - the subject's own namespace. Part of the node identity
+            #                             for :ServiceAccount; :User and :Group are not namespaced.
             #
             # @return [nil]
-            def node_subject kind:, name:
-              label = make_label kind, name
+            def node_subject kind:, name:, namespace: nil
+              label = label_for kind, name, namespace
               attrs = { name: name, kind: kind }
+              attrs[:namespace] = namespace if namespaced?(kind) && namespace.present?
 
               add_node :Subject, label, attrs
             end

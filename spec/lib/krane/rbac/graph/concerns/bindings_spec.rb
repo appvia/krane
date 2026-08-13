@@ -74,9 +74,10 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Bindings do
       end
 
       it 'create :Subject graph node for subject referenced in the binding' do
-        expect(subject).to receive(:node).with(:subject, { 
-          kind: binding[:subjects].first[:kind],
-          name: binding[:subjects].first[:name]
+        expect(subject).to receive(:node).with(:subject, {
+          kind:      binding[:subjects].first[:kind],
+          name:      binding[:subjects].first[:name],
+          namespace: binding[:subjects].first[:namespace]
         })
 
         # call
@@ -95,11 +96,13 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Bindings do
       end
 
       it 'create :ASSIGN edge between :Role and :Subject nodes' do
-        expect(subject).to receive(:edge).with(:assign, { 
-          role_kind: binding[:roleRef][:kind], 
-          role_name: binding[:roleRef][:name], 
-          subject_kind: binding[:subjects].first[:kind], 
-          subject_name: binding[:subjects].first[:name]
+        expect(subject).to receive(:edge).with(:assign, {
+          role_kind:         binding[:roleRef][:kind],
+          role_name:         binding[:roleRef][:name],
+          role_namespace:    binding[:metadata][:namespace],
+          subject_kind:      binding[:subjects].first[:kind],
+          subject_name:      binding[:subjects].first[:name],
+          subject_namespace: binding[:subjects].first[:namespace]
         })
 
         # call
@@ -107,10 +110,11 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Bindings do
       end
 
       it 'create :ACCESS edge between :Subject and :Namespace nodes' do
-        expect(subject).to receive(:edge).with(:access, { 
-          subject_kind: binding[:subjects].first[:kind], 
-          subject_name: binding[:subjects].first[:name],
-          namespace: binding[:metadata][:namespace]
+        expect(subject).to receive(:edge).with(:access, {
+          subject_kind:      binding[:subjects].first[:kind],
+          subject_name:      binding[:subjects].first[:name],
+          subject_namespace: binding[:subjects].first[:namespace],
+          namespace:         binding[:metadata][:namespace]
         })
 
         # call
@@ -124,8 +128,9 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Bindings do
         referenced_roles = subject.instance_variable_get(:@referenced_roles)
 
         expect(referenced_roles).to include(
-          role_kind:    binding[:roleRef][:kind], 
-          role_name:    binding[:roleRef][:name]
+          role_kind:      binding[:roleRef][:kind],
+          role_name:      binding[:roleRef][:name],
+          role_namespace: binding[:metadata][:namespace]
         )
       end
 
@@ -166,10 +171,11 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Bindings do
         end
 
         it 'creates missing :Role node with `disabled` flag set to true' do
-          expect(subject).to receive(:node).with(:role, { 
-            kind: binding[:roleRef][:kind],
-            name: binding[:roleRef][:name],
-            defined: false
+          expect(subject).to receive(:node).with(:role, {
+            kind:      binding[:roleRef][:kind],
+            name:      binding[:roleRef][:name],
+            namespace: binding[:metadata][:namespace],
+            defined:   false
           })
 
           # call
@@ -183,10 +189,11 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Bindings do
           undefined_roles = subject.instance_variable_get(:@undefined_roles)
 
           expect(undefined_roles).to include(
-            role_kind:    binding[:roleRef][:kind], 
-            role_name:    binding[:roleRef][:name], 
-            binding_kind: binding_kind, 
-            binding_name: binding[:metadata][:name]
+            role_kind:      binding[:roleRef][:kind],
+            role_name:      binding[:roleRef][:name],
+            role_namespace: binding[:metadata][:namespace],
+            binding_kind:   binding_kind,
+            binding_name:   binding[:metadata][:name]
           )
         end
 
@@ -223,16 +230,53 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Bindings do
           allow(subject).to receive(:edge).and_call_original
         end
 
-        it 'sets a :RELATION edge between any two subjects' do          
-          expect(subject).to receive(:edge).with(:relation, { 
-            a_subject_kind: binding[:subjects].first[:kind],
-            a_subject_name: binding[:subjects].first[:name],
-            b_subject_kind: binding[:subjects].last[:kind],
-            b_subject_name: binding[:subjects].last[:name]
+        it 'sets a :RELATION edge between any two subjects' do
+          expect(subject).to receive(:edge).with(:relation, {
+            a_subject_kind:      binding[:subjects].first[:kind],
+            a_subject_name:      binding[:subjects].first[:name],
+            a_subject_namespace: binding[:subjects].first[:namespace],
+            b_subject_kind:      binding[:subjects].last[:kind],
+            b_subject_name:      binding[:subjects].last[:name],
+            b_subject_namespace: binding[:subjects].last[:namespace]
           })
 
           # call
           subject.send(:setup_binding, binding_kind: binding_kind, binding: binding)
+        end
+
+      end
+
+      # ServiceAccounts are namespaced, so `default` in kube-system and `default`
+      # in an application namespace are separate principals with separate
+      # privileges. Subjects are identified by kind+name alone, and the
+      # `namespace` supplied on the binding subject is never read, so every
+      # same-named ServiceAccount in the cluster merges into one graph node.
+      context 'for ServiceAccount subjects sharing a name across different namespaces' do
+
+        let(:binding_kind) { :ClusterRoleBinding }
+
+        let(:binding) do
+          build(:binding, :for_cluster_role,
+            subjects: [
+              build(:subject, :service_account, name: 'default', namespace: 'kube-system'),
+              build(:subject, :service_account, name: 'default', namespace: 'myapp')
+            ])
+        end
+
+        before do
+          subject.send(:setup_binding, binding_kind: binding_kind, binding: binding)
+        end
+
+        it 'creates a distinct :Subject graph node for each namespace' do
+          subject_nodes = subject.instance_variable_get(:@node_buffer).select {|n| n[:kind] == :Subject}
+
+          expect(subject_nodes.map(&:label).uniq.size).to eq 2
+        end
+
+        it 'records the namespace on each :Subject node' do
+          subject_nodes = subject.instance_variable_get(:@node_buffer).select {|n| n[:kind] == :Subject}
+
+          expect(subject_nodes.map {|n| n.attrs[:namespace]}).to contain_exactly('kube-system', 'myapp')
         end
 
       end
