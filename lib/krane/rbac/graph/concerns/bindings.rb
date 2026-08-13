@@ -62,10 +62,11 @@ module Krane
               
               # If role in binding hasn't been defined then it should be recorded
               attrs = {
-                role_kind:    role_kind, 
-                role_name:    role_name, 
-                binding_kind: binding_kind, 
-                binding_name: binding_name 
+                role_kind:    role_kind,
+                role_name:    role_name,
+                binding_kind: binding_kind,
+                binding_name: binding_name,
+                namespace:    namespace
               }
               register_undefined_role(**attrs)
               
@@ -104,10 +105,12 @@ module Krane
             def set_relation_between_any_two_subjects subjects:
               subjects.combination(2).each do |a,b|
                 edge :relation, {
-                  a_subject_kind: a['kind'],
-                  a_subject_name: a['name'],
-                  b_subject_kind: b['kind'],
-                  b_subject_name: b['name'],
+                  a_subject_kind:      a['kind'],
+                  a_subject_name:      a['name'],
+                  a_subject_namespace: a['namespace'],
+                  b_subject_kind:      b['kind'],
+                  b_subject_name:      b['name'],
+                  b_subject_namespace: b['namespace'],
                 }
               end
             end
@@ -123,36 +126,53 @@ module Krane
             #
             # @return [nil]
             def set_subject_relations subject:, role_kind:, role_name:, binding_namespace: nil
-              # subject namespace is determined in the following priority order:
+              # The namespace the subject is being granted access to, determined in the
+              # following priority order:
               # 1. role binding namespace
-              # 2. role namespace
+              # 2. role namespace, when the role name is defined in exactly one namespace
               # 3. if all above nil it defaults to ALL_NAMESPACES_PLACEHOLDER
-              subject_namespace = if binding_namespace.present?
+              #
+              # Note this is NOT the subject's own namespace - a ServiceAccount defined in one
+              # namespace can be granted access to a different one.
+              access_namespace = if binding_namespace.present?
                 binding_namespace
               else
-                @role_ns_lookup.fetch(role_name, Krane::Rbac::Graph::Builder::ALL_NAMESPACES_PLACEHOLDER)
+                role_namespaces = @role_ns_lookup.fetch(role_name, nil)
+                # A role name defined in several namespaces cannot be attributed to one of
+                # them, so fall back to the cluster-wide placeholder rather than guessing.
+                role_namespaces&.size == 1 ? role_namespaces.first :
+                  Krane::Rbac::Graph::Builder::ALL_NAMESPACES_PLACEHOLDER
               end
 
-              # Building up referenced roles
-              @referenced_roles << {
-                role_kind: role_kind.to_sym, 
-                role_name: role_name
+              # The subject's own namespace, which forms part of its graph identity.
+              # Only present for ServiceAccount subjects.
+              subject_namespace = subject['namespace']
+
+              # Building up referenced roles. Must use the same identity as @defined_roles,
+              # otherwise `unused_roles` (defined - default - referenced) stops matching.
+              @referenced_roles << role_identity(role_kind, role_name, access_namespace)
+
+              node :namespace, { name: access_namespace }
+              node :subject, {
+                kind:      subject['kind'],
+                name:      subject['name'],
+                namespace: subject_namespace
               }
 
-              node :namespace, { name: subject_namespace }
-              node :subject, { kind: subject['kind'], name: subject['name'] }
-              
-              edge :assign, { 
-                role_kind: role_kind, 
-                role_name: role_name, 
-                subject_kind: subject['kind'], 
-                subject_name: subject['name'] 
+              edge :assign, {
+                role_kind:         role_kind,
+                role_name:         role_name,
+                role_namespace:    access_namespace,
+                subject_kind:      subject['kind'],
+                subject_name:      subject['name'],
+                subject_namespace: subject_namespace
               }
 
               edge :access, {
-                subject_kind: subject['kind'], 
-                subject_name: subject['name'], 
-                namespace: subject_namespace 
+                subject_kind:      subject['kind'],
+                subject_name:      subject['name'],
+                subject_namespace: subject_namespace,
+                namespace:         access_namespace
               }
             end
 
@@ -162,24 +182,21 @@ module Krane
             # @param role_name [String] - role name
             # @param binding_kind [Symbol] - binding kind as :RoleBinding, :ClusterRoleBinding
             # @param binding_name [String] - binding name
+            # @param namespace [String] - namespace the binding refers the role in
             #
             # @return [nil]
-            def register_undefined_role role_kind:, role_name:, binding_kind:, binding_name:
-              return if @defined_roles.find do |r| 
-                r[:role_kind] == role_kind.to_sym && r[:role_name] == role_name
-              end
+            def register_undefined_role role_kind:, role_name:, binding_kind:, binding_name:, namespace: nil
+              return if @defined_roles.include? role_identity(role_kind, role_name, namespace)
 
               # Add role to undefined roles dict
-              @undefined_roles << { 
-                role_kind:    role_kind, 
-                role_name:    role_name, 
-                binding_kind: binding_kind, 
-                binding_name: binding_name 
-              } 
+              @undefined_roles << role_identity(role_kind, role_name, namespace).merge(
+                binding_kind: binding_kind,
+                binding_name: binding_name
+              )
 
               # Create missing Role node so it can be referred to by other entities
               # Missing Role node must have attribute {defined: 'false'} so we can filter it in queries
-              node :role, { kind: role_kind, name: role_name, defined: false }
+              node :role, { kind: role_kind, name: role_name, namespace: namespace, defined: false }
             end
 
             # Caches bindings without any subjects

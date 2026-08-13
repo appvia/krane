@@ -105,12 +105,13 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Roles do
         end
 
         it 'creates :Role graph node' do
-          expect(subject).to receive(:node).with(:role, { 
-            kind:          role_kind, 
-            name:          role[:metadata][:name], 
-            is_default:    false, 
+          expect(subject).to receive(:node).with(:role, {
+            kind:          role_kind,
+            name:          role[:metadata][:name],
+            namespace:     role[:metadata][:namespace],
+            is_default:    false,
             is_composite:  false,
-            is_aggregable: false, 
+            is_aggregable: false,
             aggregable_by: '',
             version:       role[:metadata][:resourceVersion],
             created_at:    role[:metadata][:creationTimestamp]
@@ -132,10 +133,11 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Roles do
         end
 
         it 'creates :GRANT graph edge between :Role and :Rule nodes' do
-          expect(subject).to receive(:edge).with(:grant, { 
-            role_kind: role_kind, 
-            role_name: role[:metadata][:name], 
-            rule:      subject.process_resource_rule(role[:rules].first).first
+          expect(subject).to receive(:edge).with(:grant, {
+            role_kind: role_kind,
+            role_name: role[:metadata][:name],
+            rule:      subject.process_resource_rule(role[:rules].first).first,
+            namespace: role[:metadata][:namespace]
           })
         end
 
@@ -155,13 +157,16 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Roles do
         defined_roles  = subject.instance_variable_get(:@defined_roles)
         default_roles  = subject.instance_variable_get(:@default_roles)
 
+        # A role name is only unique within a namespace, so the lookup maps a name to the
+        # set of namespaces it is defined in.
         expect(role_ns_lookup).to include(
-          role[:metadata][:name] => role[:metadata][:namespace]
+          role[:metadata][:name] => Set[role[:metadata][:namespace]]
         )
 
         expect(defined_roles).to include(
-          role_kind: :Role,
-          role_name: role[:metadata][:name]
+          role_kind:      :Role,
+          role_name:      role[:metadata][:name],
+          role_namespace: role[:metadata][:namespace]
         )
 
         expect(default_roles).to be_empty
@@ -233,8 +238,9 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Roles do
 
           default_roles = subject.instance_variable_get(:@default_roles)
           expect(default_roles).to include(
-            role_kind: :Role,
-            role_name: role[:metadata][:name]
+            role_kind:      :Role,
+            role_name:      role[:metadata][:name],
+            role_namespace: role[:metadata][:namespace]
           )
         end
 
@@ -339,12 +345,13 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Roles do
           expect(declared).to eq declared.uniq
         end
 
-        it 'tracks the namespace of each Role separately' do
-          # @role_ns_lookup is keyed by role name alone, so team-a's entry is
-          # silently overwritten by team-b's.
+        it 'tracks every namespace the Role name is defined in' do
+          # @role_ns_lookup is keyed by role name, which is only unique within a namespace.
+          # Holding a single namespace per name meant team-a was silently overwritten by
+          # team-b, so the lookup holds the set of namespaces instead.
           role_ns_lookup = subject.instance_variable_get(:@role_ns_lookup)
 
-          expect(role_ns_lookup.values.uniq).to contain_exactly('team-a', 'team-b')
+          expect(role_ns_lookup.values.flat_map(&:to_a)).to contain_exactly('team-a', 'team-b')
         end
 
       end

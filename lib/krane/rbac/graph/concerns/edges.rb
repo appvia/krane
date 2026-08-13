@@ -77,11 +77,12 @@ module Krane
             #
             # @param role_kind [Symbol/String] :Role or :ClusterRole
             # @param role_name [String] - role name
-            # @param namespace [String] - namespace name
+            # @param namespace [String] - namespace name. For a :Role this is also the role's
+            #                             own namespace, so it forms part of the role's identity.
             #
             # @return [nil]
             def edge_scope role_kind:, role_name:, namespace:
-              role_label = make_label role_kind, role_name
+              role_label = label_for role_kind, role_name, namespace
               ns_label   = make_label namespace
 
               add_relation role_label, :SCOPE, ns_label
@@ -92,11 +93,14 @@ module Krane
             #
             # @param subject_kind [Symbol/String] :User, :Group, :ServiceAccount
             # @param subject_name [String] - subject name
-            # @param namespace [String] - namespace name
+            # @param namespace [String] - the namespace the subject is being granted access to
+            # @param subject_namespace [String] - the subject's own namespace. Distinct from
+            #                                     :namespace above - a ServiceAccount in one
+            #                                     namespace can be granted access to another.
             #
             # @return [nil]
-            def edge_access subject_kind:, subject_name:, namespace:
-              subject_label = make_label subject_kind, subject_name
+            def edge_access subject_kind:, subject_name:, namespace:, subject_namespace: nil
+              subject_label = label_for subject_kind, subject_name, subject_namespace
               ns_label      = make_label namespace
 
               add_relation subject_label, :ACCESS, ns_label
@@ -107,10 +111,11 @@ module Krane
             # @param role_kind [Symbol/String] :Role, :ClusterRole
             # @param role_name [String] - role name
             # @param rule [Hash] - access rule definition map
+            # @param namespace [String] - the role's own namespace
             #
             # @return [nil]
-            def edge_grant role_kind:, role_name:, rule:
-              role_label = make_label role_kind, role_name
+            def edge_grant role_kind:, role_name:, rule:, namespace: nil
+              role_label = label_for role_kind, role_name, namespace
               rule_label = make_label rule.values
 
               add_relation role_label, :GRANT, rule_label
@@ -139,11 +144,14 @@ module Krane
             # @param role_name [String] - role name
             # @param subject_kind [Symbol/String] :User, :Group, :ServiceAccount
             # @param subject_name [String] - subject name
+            # @param role_namespace [String] - the role's own namespace
+            # @param subject_namespace [String] - the subject's own namespace
             #
             # @return [nil]
-            def edge_assign role_kind:, role_name:, subject_kind:, subject_name:
-              role_label    = make_label role_kind, role_name
-              subject_label = make_label subject_kind, subject_name
+            def edge_assign role_kind:, role_name:, subject_kind:, subject_name:,
+                role_namespace: nil, subject_namespace: nil
+              role_label    = label_for role_kind, role_name, role_namespace
+              subject_label = label_for subject_kind, subject_name, subject_namespace
 
               add_relation role_label, :ASSIGN, subject_label
             end
@@ -154,11 +162,14 @@ module Krane
             # @param a_subject_name [String] - first subject name
             # @param b_subject_kind [Symbol/String] :User, :Group, :ServiceAccount
             # @param b_subject_name [String] - second subject name
+            # @param a_subject_namespace [String] - first subject's own namespace
+            # @param b_subject_namespace [String] - second subject's own namespace
             #
             # @return [nil]
-            def edge_relation a_subject_kind:, a_subject_name:, b_subject_kind:, b_subject_name:
-              a_subject_label = make_label a_subject_kind, a_subject_name
-              b_subject_label = make_label b_subject_kind, b_subject_name
+            def edge_relation a_subject_kind:, a_subject_name:, b_subject_kind:, b_subject_name:,
+                a_subject_namespace: nil, b_subject_namespace: nil
+              a_subject_label = label_for a_subject_kind, a_subject_name, a_subject_namespace
+              b_subject_label = label_for b_subject_kind, b_subject_name, b_subject_namespace
 
               add_relation a_subject_label, :RELATION, b_subject_label
             end

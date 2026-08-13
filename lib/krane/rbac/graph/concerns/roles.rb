@@ -84,32 +84,31 @@ module Krane
 
               namespace = role_kind == :Role ? role['metadata']['namespace'] : Krane::Rbac::Graph::Builder::ALL_NAMESPACES_PLACEHOLDER
 
-              # caching role namespace scope
-              @role_ns_lookup[role_name] = namespace if role_kind == :Role 
+              # caching role namespace scope. A role name is only unique within a namespace,
+              # so this collects every namespace the name is defined in rather than overwriting.
+              @role_ns_lookup[role_name] << namespace if role_kind == :Role 
 
-              entry = {
-                role_kind: role_kind,
-                role_name: role_name
-              }
-              
+              entry = role_identity(role_kind, role_name, namespace)
+
               @defined_roles << entry # caching role as defined
               @default_roles << entry if is_default # cache default roles
 
               node :namespace, { name: namespace }
-              node :role, { 
-                kind:          role_kind, 
-                name:          role_name, 
-                is_default:    is_default, 
+              node :role, {
+                kind:          role_kind,
+                name:          role_name,
+                namespace:     namespace,
+                is_default:    is_default,
                 is_composite:  is_composite,
-                is_aggregable: is_aggregable, 
+                is_aggregable: is_aggregable,
                 aggregable_by: aggregable_by.join(', '),
                 version:       version,
-                created_at:    created_at 
+                created_at:    created_at
               }
-              edge :scope, { 
-                role_kind: role_kind, 
-                role_name: role_name, 
-                namespace: namespace 
+              edge :scope, {
+                role_kind: role_kind,
+                role_name: role_name,
+                namespace: namespace
               }
 
               return if role_info[:rules].blank?
@@ -120,7 +119,8 @@ module Krane
                 edge :grant, {
                   role_kind: role_kind,
                   role_name: role_name,
-                  rule:      rule
+                  rule:      rule,
+                  namespace: namespace
                 }
                 edge :security, { rule: rule }
               end

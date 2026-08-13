@@ -20,6 +20,7 @@ FactoryBot.define do
     transient do
       kind          { :Role }
       name          { 'role-name' }
+      namespace     { 'some-namespace' }
       version       { '271831670' }
       created_at    { '2017-09-29T16:21:33Z' }
       defined       { true }
@@ -31,7 +32,8 @@ FactoryBot.define do
 
     trait :for_cluster_role do
       transient do
-        kind { :ClusterRole }
+        kind      { :ClusterRole }
+        namespace { Krane::Rbac::Graph::Builder::ALL_NAMESPACES_PLACEHOLDER }
       end
     end
 
@@ -43,9 +45,10 @@ FactoryBot.define do
  
     skip_create
     initialize_with do
-      { 
+      {
         kind:          kind,
         name:          name,
+        namespace:     namespace,
         version:       version,
         created_at:    created_at,
         defined:       defined,
