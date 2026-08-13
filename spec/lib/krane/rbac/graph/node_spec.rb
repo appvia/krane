@@ -184,6 +184,66 @@ RSpec.describe Krane::Rbac::Graph::Node do
 
     end
 
+    # Namespace-scoped entities are distinct graph nodes per namespace, so the network view
+    # must distinguish them - otherwise two separate nodes render with an identical label and
+    # the viewer cannot tell which is which.
+    context 'for a namespace scoped node' do
+
+      context 'for a ServiceAccount :Subject' do
+
+        subject do
+          build(:node, :subject, attrs: { kind: :ServiceAccount, name: 'default', namespace: 'team-a' })
+        end
+
+        it 'includes the namespace in the network label' do
+          expect(subject.to_network[:label]).to eq 'ServiceAccount: default (team-a)'
+        end
+
+        it 'includes the namespace in the network title' do
+          expect(subject.to_network[:title]).to include 'team-a'
+        end
+
+      end
+
+      context 'for a namespaced :Role' do
+
+        subject do
+          build(:node, :role, attrs: { kind: :Role, name: 'developer', namespace: 'team-b' })
+        end
+
+        it 'includes the namespace in the network label' do
+          expect(subject.to_network[:label]).to eq 'Role: developer (team-b)'
+        end
+
+      end
+
+      context 'for a cluster scoped :ClusterRole' do
+
+        subject do
+          build(:node, :role, attrs: {
+            kind: :ClusterRole, name: 'admin',
+            namespace: Krane::Rbac::Graph::Builder::ALL_NAMESPACES_PLACEHOLDER
+          })
+        end
+
+        it 'does not decorate the label with the all-namespaces placeholder' do
+          expect(subject.to_network[:label]).to eq 'ClusterRole: admin'
+        end
+
+      end
+
+      context 'for a :User subject, which is not namespaced' do
+
+        subject { build(:node, :subject, attrs: { kind: :User, name: 'alice' }) }
+
+        it 'leaves the label undecorated' do
+          expect(subject.to_network[:label]).to eq 'User: alice'
+        end
+
+      end
+
+    end
+
     context 'for :Namespace node kind' do
 
       subject { build(:node, :namespace) }

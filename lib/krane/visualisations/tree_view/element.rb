@@ -34,7 +34,7 @@ module Krane
           build_facet(facet) do
             add tag: :Namespace, text: namespace, resource_kind: :NAMESPACE
             add tag: :admits, text: subject_kind
-            add tag: subject_kind, text: subject_name, resource_kind: :ACTOR
+            add tag: subject_kind, text: actor, resource_kind: :ACTOR
             add tag: :to, text: rule_type
 
             if resource_related?
@@ -52,7 +52,7 @@ module Krane
         def subjects facet
           build_facet(facet) do
             add tag: :Actor, text: subject_kind
-            add tag: subject_kind, text: subject_name, resource_kind: :ACTOR
+            add tag: subject_kind, text: actor, resource_kind: :ACTOR
             add tag: :'in namespace', text: namespace, resource_kind: :NAMESPACE
             add tag: :'has access to', text: rule_type
 
@@ -84,7 +84,7 @@ module Krane
             add tag: :action, text: rule_verb
             add tag: :'in namespace', text: namespace, resource_kind: :NAMESPACE
             add tag: :to, text: subject_kind
-            add tag: subject_kind, text: subject_name, resource_kind: :ACTOR
+            add tag: subject_kind, text: actor, resource_kind: :ACTOR
           end
         end
 
@@ -103,7 +103,7 @@ module Krane
             add tag: :'granted to', text: role_kind
             add tag: [role_kind, default_role, aggregable_role, composite_role].compact, text: role_name, resource_kind: :ROLE
             add tag: :'with actor', text: subject_kind
-            add tag: subject_kind, text: subject_name, resource_kind: :ACTOR
+            add tag: subject_kind, text: actor, resource_kind: :ACTOR
             add tag: :'in namespace', text: namespace, resource_kind: :NAMESPACE
           end
         end
@@ -121,6 +121,17 @@ module Krane
         def namespace
           return ALL_NAMESPACES if namespace_name == '*'
           namespace_name
+        end
+
+        # Display name for a subject.
+        #
+        # ServiceAccounts are namespaced, so the namespace forms part of the subject's identity.
+        # Keying the tree on the name alone merges same-named ServiceAccounts from different
+        # namespaces into one entry showing the union of two separate principals' access.
+        # :User and :Group are not namespaced and are left undecorated.
+        def actor
+          return subject_name if subject_namespace.blank? || subject_namespace == 'NULL'
+          "#{subject_name} (#{subject_namespace})"
         end
 
         def resource_name

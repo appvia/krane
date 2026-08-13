@@ -54,10 +54,17 @@ module Krane
           # Generate network graph nodes (excluding Psp, Rule nodes)
           k = attrs[:kind] || kind   # get :kind from node attributes, or node kind
           l = attrs[:name] || label  # get :name from node attributes, or node label
+          n = attrs[:namespace]      # namespace scoped entities only (:Role, :ServiceAccount)
           d = attrs[:is_default]     # :Role specific
           c = attrs[:is_composite]   # :Role specific
           a = attrs[:is_aggregable]  # :Role specific
           i = attrs[:aggregable_by]  # :Role specific
+
+          # Namespace scoped entities are distinct nodes per namespace, so the namespace has to
+          # appear in the label - without it two separate nodes render identically and the viewer
+          # cannot tell them apart. Cluster scoped entities carry the all-namespaces placeholder,
+          # which says nothing and is left out.
+          l = "#{l} (#{n})" if n.present? && n.to_s != Builder::ALL_NAMESPACES_PLACEHOLDER
 
           title = if (kind == :Role)
             ["#{k}: #{l}"].tap do |t|

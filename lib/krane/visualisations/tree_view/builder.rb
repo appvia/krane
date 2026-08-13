@@ -44,8 +44,9 @@ module Krane
           res = @graph.query(%Q(
             MATCH (ns:Namespace)<-[:ACCESS]-(s:Subject)-[:ASSIGN]->(r:Role)-[:GRANT]->(ru:Rule)
             RETURN ns.name as namespace_name,
-                   s.kind as subject_kind, 
+                   s.kind as subject_kind,
                    s.name as subject_name,
+                   s.namespace as subject_namespace,
                    r.kind as role_kind, 
                    r.name as role_name,
                    r.is_default as role_is_default,
