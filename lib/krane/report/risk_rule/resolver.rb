@@ -88,14 +88,14 @@ module Krane
         # Note: :query has precedence over :template
         def query
           return if @item[:query].present?     # when :query excplicitly defined then no need to resolve matchers
-          @item[:query] = cleanup(Query::Builder.for(item: @item))
+          @item[:query] = cleanup_query(Query::Builder.for(item: @item))
         end
 
         # Resolves writer based on :template defined for the risk rule item (only when no explicit :writer is provided)
         # Note: :writer has precedence over :template!
         def writer
           return if @item[:writer].present?   # when :writer explicitly defined then no need to resolve it
-          @item[:writer] = cleanup(Query::Template.for(kind: @item[:template]).writer)
+          @item[:writer] = cleanup_writer(Query::Template.for(kind: @item[:template]).writer)
         end
 
         def custom_params
@@ -168,8 +168,22 @@ module Krane
           str.gsub!("{{#{placeholder}}}") { value }
         end
 
-        def cleanup str
+        # Normalises a resolved graph query. Newlines carry no meaning in Cypher, so the whole
+        # query is squeezed onto a single line.
+        def cleanup_query str
           str.strip.gsub(/\s+/, ' ')
+        end
+
+        # Normalises a resolved writer expression.
+        #
+        # A writer is Ruby source, not a query, so its newlines ARE significant and must be kept.
+        # Squeezing them merges consecutive statements onto one line, and Ruby's adjacent string
+        # literal concatenation then absorbs a trailing message string into the preceding
+        # statement - leaving the writer to evaluate to that statement's value rather than the
+        # message. Only the heredoc indentation is removed here; content within a line is left
+        # alone, and the writer's *output* is separately whitespace-normalised in Report::Element.
+        def cleanup_writer str
+          str.strip.lines.map(&:strip).join("\n")
         end
       
       end

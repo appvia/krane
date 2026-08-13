@@ -101,6 +101,59 @@ RSpec.describe Krane::Report::RiskRule::Resolver do
 
       end
 
+      # A writer is Ruby source, so collapsing its newlines changes what it evaluates to.
+      # The two `unrestricted-*` templates use a two-line writer - an assignment followed by
+      # the message string - and Ruby's adjacent string literal concatenation absorbs the
+      # message into the assignment when they end up on one line, leaving the writer to
+      # evaluate to the assigned value instead of the message.
+      context 'for a template whose writer spans multiple lines' do
+
+        let(:risk) do
+          build(
+            :risk,
+            :with_default_template_based_rule,
+            default_rule_template: 'unrestricted-ns-level-subjects'
+          )
+        end
+
+        let(:result) do
+          Hashie::Mash.new(
+            rule_type:      'resource',
+            subject_kind:   'User',
+            subject_name:   'bob',
+            rule_api_group: '*',
+            namespace_name: 'team-a'
+          )
+        end
+
+        it 'preserves the newlines in the resolved writer' do
+          expect(subject.risk_rules.first.writer).to include("\n")
+        end
+
+        it 'resolves to a writer which evaluates to the risk message' do
+          writer = subject.risk_rules.first.writer
+
+          expect(eval(writer)).to eq(
+            'User bob has * access to * resources (apiGroup: *) in team-a namespace'
+          )
+        end
+
+        context 'for a non-resource rule' do
+
+          let(:result) { super().merge(rule_type: 'non-resource') }
+
+          it 'resolves to a writer which evaluates to the risk message' do
+            writer = subject.risk_rules.first.writer
+
+            expect(eval(writer)).to eq(
+              'User bob has * access to * non-resource URLs (apiGroup: *) in team-a namespace'
+            )
+          end
+
+        end
+
+      end
+
     end
 
     context 'with query based risk rule without both query & writer specified' do
