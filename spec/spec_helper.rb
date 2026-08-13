@@ -14,9 +14,14 @@
 #
 # See http://rubydoc.info/gems/rspec-core/RSpec/Core/Configuration
 
-require 'app_helper'
+# SimpleCov must start BEFORE app_helper is required. app_helper eagerly loads the
+# whole of lib/, and any file loaded before SimpleCov.start is never instrumented.
 require 'simplecov'
-SimpleCov.start
+SimpleCov.start do
+  add_filter '/spec/'
+end
+
+require 'app_helper'
 
 ENV['KRANE_ENV'] = 'test'
 
