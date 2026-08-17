@@ -18,7 +18,7 @@
 # whole of lib/, and any file loaded before SimpleCov.start is never instrumented.
 require 'simplecov'
 SimpleCov.start do
-  add_filter '/spec/'
+  skip '/spec/'
 end
 
 require 'app_helper'
