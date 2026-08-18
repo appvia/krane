@@ -5,15 +5,7 @@ import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
   {
-    // The 2021 stack still lives here until the teardown commit removes it.
-    ignores: [
-      'compiled/**',
-      'node_modules/**',
-      'gulpfile.js',
-      'src/js/**',
-      'src/scss/**',
-      'src/html/**',
-    ],
+    ignores: ['compiled/**', 'node_modules/**'],
   },
   js.configs.recommended,
   tseslint.configs.recommended,

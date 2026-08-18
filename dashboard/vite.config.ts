@@ -30,6 +30,9 @@ export default defineConfig({
     emptyOutDir: false,
     assetsDir: 'assets',
     sourcemap: false,
+    // vis-network is ~530 kB on its own and cannot be split usefully. The graph
+    // is a lazily routed view, so it only costs the people who open it.
+    chunkSizeWarningLimit: 600,
   },
   test: {
     environment: 'happy-dom',
