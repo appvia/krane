@@ -301,7 +301,16 @@ export function useTree(loader?: TreeLoader) {
   function step(by: number): void {
     const { ids } = matches.value
     if (ids.length === 0) return
+
     position.value = (position.value + by + ids.length) % ids.length
+
+    // Reveal what was stepped onto. The branch holding it may have been
+    // collapsed by hand since the search ran, and a counter moving against a
+    // tree that does not is indistinguishable from a broken button.
+    const id = ids[position.value]
+    if (id === undefined) return
+    store.expandAncestors([id])
+    bumpView()
   }
 
   const details = computed(() => {

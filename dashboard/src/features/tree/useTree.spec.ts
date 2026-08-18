@@ -197,6 +197,28 @@ describe('useTree', () => {
     expect(tree.current.value).toBe(2) // wraps
   })
 
+  it('reopens the branch holding a match when stepping onto it', async () => {
+    stubFetch()
+    const { load } = loader()
+    const { tree } = await mountTree(load)
+
+    tree.query.value = 'kube'
+    await vi.waitFor(() => expect(tree.matches.value.total).toBe(2))
+    expect(texts(tree)).toContain('kube-system')
+
+    // Collapsing is how you get your bearings back after a search opens
+    // everything; the matches are still there, just out of sight.
+    tree.collapseAll()
+    expect(texts(tree)).toEqual(['default cluster', 'Namespaces', 'Actors', 'Resource Access'])
+
+    tree.next()
+    expect(texts(tree)).toContain('kube-public')
+    expect(tree.current.value).toBe(3)
+
+    tree.previous()
+    expect(texts(tree)).toContain('kube-system')
+  })
+
   it('says which unopened branches also contain matches, and loads them on request', async () => {
     stubFetch()
     const { load } = loader()

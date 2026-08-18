@@ -47,12 +47,18 @@ const chunkMessage = computed(() => {
     : error.message
 })
 
-// Walking matches is pointless if the row stays off screen.
-watch(tree.current, (id) => {
-  if (id === null) return
-  const index = tree.rows.value.findIndex((row) => row.id === id)
-  if (index !== -1) virtualizer.value.scrollToIndex(index, { align: 'center' })
-})
+// Walking matches is pointless if the row stays off screen. After the DOM has
+// caught up: stepping onto a match reopens the branch holding it, which changes
+// the row it sits at.
+watch(
+  tree.current,
+  (id) => {
+    if (id === null) return
+    const index = tree.rows.value.findIndex((row) => row.id === id)
+    if (index !== -1) virtualizer.value.scrollToIndex(index, { align: 'center' })
+  },
+  { flush: 'post' },
+)
 </script>
 
 <template>
