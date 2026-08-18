@@ -5,7 +5,6 @@ defineProps<{
   details: {
     text: string
     branch: string
-    tags: string
     path: string[]
     sentence: SentencePart[]
     children: number
@@ -52,14 +51,6 @@ defineProps<{
       </p>
 
       <dl class="mt-5 space-y-3 text-sm">
-        <div v-if="details.tags">
-          <dt class="text-muted">
-            Tags
-          </dt>
-          <dd class="mt-1">
-            {{ details.tags }}
-          </dd>
-        </div>
         <div v-if="details.children">
           <dt class="text-muted">
             Children

@@ -318,7 +318,6 @@ export function useTree(loader?: TreeLoader) {
       id,
       text: store.texts[id] ?? '',
       branch: store.branches[id] ?? '',
-      tags: store.tags[id] ?? '',
       path: store.ancestors(id).map((ancestor) => store.texts[ancestor] ?? ''),
       sentence: describe(
         path.map((node) => ({ text: store.texts[node] ?? '', tag: firstTag(store.tags[node] ?? '') })),

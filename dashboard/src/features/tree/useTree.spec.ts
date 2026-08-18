@@ -263,7 +263,6 @@ describe('useTree', () => {
 
     expect(tree.details.value).toMatchObject({
       text: 'kube-system',
-      tags: 'Namespace',
       path: ['default cluster', 'Namespaces'],
       hidden: 3,
     })
