@@ -14,6 +14,7 @@ PATH
       openid_connect
       redisgraph
       slack-notifier (~> 2.2, >= 2.2.2)
+      webrick
 
 GEM
   remote: https://rubygems.org/
