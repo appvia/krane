@@ -47,7 +47,10 @@ module Krane
         # expanding one node fetches something a browser can parse without
         # stalling. Splitting at level 2 alone is not enough: on a real cluster a
         # single facet can hold tens of megabytes.
-        MAX_CHUNK_BYTES = 256 * 1024
+        #
+        # The trade is requests against latency per expand. 128 KB favours the
+        # expand: a branch opens sooner, at the cost of more files.
+        MAX_CHUNK_BYTES = 128 * 1024
 
         # `{"nodes":[` and `]}` around the entries, and a comma between each.
         CHUNK_OVERHEAD = 12
