@@ -22,7 +22,7 @@ export type NetworkHandle = {
 }
 
 /** vis-data keys everything by id, and published edges carry none. */
-type EdgeItem = { id: string; from: string; to: string }
+type EdgeItem = { id: string; from: string; to: string; width?: number }
 
 export type NetworkFactory = (
   container: HTMLElement,
@@ -36,6 +36,7 @@ type Palette = {
   border: string
   font: string
   orphan: string
+  focus: string
 }
 
 /** Colours come from the theme tokens, so the graph re-themes with everything else. */
@@ -51,6 +52,7 @@ function palette(): Palette {
     border: token('--krane-surface', '#ffffff'),
     font: token('--krane-text', '#0f172a'),
     orphan: token('--krane-sev-warning', '#f79009'),
+    focus: token('--krane-accent', '#4f46e5'),
   }
 }
 
@@ -59,12 +61,25 @@ function paint(node: NetworkNode, colours: Palette, isOrphan: boolean, isFocus: 
   return {
     color: {
       background: base,
-      border: isOrphan ? colours.orphan : isFocus ? colours.font : base,
-      highlight: { background: base, border: colours.font },
+      border: isOrphan ? colours.orphan : isFocus ? colours.focus : base,
+      highlight: { background: base, border: colours.focus },
     },
-    borderWidth: isOrphan || isFocus ? 3 : 1,
+    borderWidth: isFocus ? 4 : isOrphan ? 3 : 1,
     font: { color: colours.font },
   }
+}
+
+/**
+ * What the focused node is attached to is the point of the view, so those edges
+ * are drawn as connections rather than as background. Everything further out
+ * stays faint: it is context, not the answer.
+ */
+function paintEdge(edge: { from: string; to: string }, colours: Palette, focused: string | null) {
+  const attached = focused !== null && (edge.from === focused || edge.to === focused)
+
+  return attached
+    ? { color: { color: colours.focus, highlight: colours.focus }, width: 2.5 }
+    : { color: { color: colours.edge, highlight: colours.font }, width: 0.6 }
 }
 
 export function useVisNetwork(
@@ -166,7 +181,10 @@ export function useVisNetwork(
       ...new Map(
         source.network_edges
           .filter((edge) => drawn.has(edge.from) && drawn.has(edge.to))
-          .map((edge) => [`${edge.from}->${edge.to}`, { id: `${edge.from}->${edge.to}`, ...edge }]),
+          .map((edge) => [
+            `${edge.from}->${edge.to}`,
+            { id: `${edge.from}->${edge.to}`, ...edge, ...paintEdge(edge, colours, focus.value) },
+          ]),
       ).values(),
     ])
 
@@ -179,9 +197,8 @@ export function useVisNetwork(
         scaling: { min: 8, max: 32, label: { min: 10, max: 22, drawThreshold: 10, maxVisible: 24 } },
       },
       edges: {
-        width: 0.6,
         selectionWidth: 3,
-        color: { color: colours.edge, highlight: colours.font, inherit: false },
+        color: { inherit: false },
         smooth: { type: 'continuous' },
       },
       layout: { improvedLayout: false },

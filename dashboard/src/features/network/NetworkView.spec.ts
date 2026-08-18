@@ -26,7 +26,7 @@ type Listener = (params: { nodes?: string[]; iterations?: number; total?: number
 /** A stand-in for vis-network: records what it was handed and asked to do. */
 function fakeNetwork() {
   const listeners = new Map<string, Listener>()
-  const drawn: { nodes: string[]; edges: string[] }[] = []
+  const drawn: { nodes: string[]; edges: string[]; edgeItems: { id: string; width?: number }[] }[] = []
   const calls = { destroyed: 0, fitted: 0, options: [] as Record<string, unknown>[] }
 
   const createNetwork: NetworkFactory = (_container, data, options) => {
@@ -34,6 +34,7 @@ function fakeNetwork() {
     drawn.push({
       nodes: data.nodes.getIds().map(String),
       edges: data.edges.getIds().map(String),
+      edgeItems: data.edges.get() as { id: string; width?: number }[],
     })
 
     return {
@@ -115,6 +116,26 @@ describe('NetworkView', () => {
     await vi.waitFor(() => expect(vis.latest()?.nodes).toEqual(['1', '2', '3']))
     expect(vis.latest()?.edges).toEqual(['1->2', '2->3'])
     expect(wrapper.text()).toContain('3 of 4 nodes')
+  })
+
+  it('draws what the focused node is attached to as connections', async () => {
+    // Arriving from the tree, the point of the view is what this node touches;
+    // a second hop away is context.
+    const { vis } = await mountView({ focus: 'kube-system' })
+
+    await vi.waitFor(() => expect(vis.latest()?.edges).toHaveLength(2))
+    const widths = Object.fromEntries(
+      (vis.latest()?.edgeItems ?? []).map((edge) => [edge.id, edge.width]),
+    )
+
+    expect(widths['1->2']).toBeGreaterThan(widths['2->3'] as number) // 1 is the focus
+  })
+
+  it('draws every edge alike when nothing is in focus', async () => {
+    const { vis } = await mountView()
+
+    const widths = new Set((vis.latest()?.edgeItems ?? []).map((edge) => edge.width))
+    expect(widths.size).toBe(1)
   })
 
   it('narrows to fewer hops on request', async () => {
