@@ -24,7 +24,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "typecheck": "vue-tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "check:offline": "node scripts/check-offline.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",

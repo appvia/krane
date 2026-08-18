@@ -184,6 +184,10 @@ Cluster flag `-c <cluster-name>` may be passed if you want to run the dashboard 
 
 Command above will start local web server on default port `8000`, and display the dashboard link.
 
+The server binds to `0.0.0.0` so that it is reachable when running in a cluster. Pass `-b 127.0.0.1` to keep it on the loopback interface when running locally.
+
+**The dashboard has no authentication.** It serves everything Krane knows about your cluster's RBAC to anyone who can reach the port, so do not expose it directly. Reach it with `kubectl port-forward`, restrict access with a NetworkPolicy (the chart already labels the pod with `network/krane: "true"`), or put an authenticating proxy in front of it.
+
 ## Architecture
 
 ### RBAC Data indexed in a local Graph database
@@ -561,14 +565,23 @@ $ ./bin/krane report -k docker-desktop  # to generate your first report for
 ...
 ```
 
-To enable Dashboard UI local development mode
+To work on the Dashboard UI
 ```sh
 $ cd dashboard
-$ npm install
-$ npm start
+$ npm ci
+$ npm run dev
 ```
 
-This will automatically start the Dashboard server, open default browser and watch for source files changes.
+This starts the Vite dev server with hot reload. It serves report data from `dashboard/compiled/data`, so generate a report first for the dashboard to have anything to show.
+
+Other dashboard commands:
+```sh
+$ npm run lint          # eslint
+$ npm run typecheck     # vue-tsc
+$ npm run test          # vitest
+$ npm run build         # production build into dashboard/compiled
+$ npm run check:offline # fail if the build references anything remote
+```
 
 _Krane_ comes preconfigured for improved developer experience with [Skaffold](https://skaffold.dev/). Iterating on the project and validating the application by running the entire stack in local or remote Kubernetes cluster just got easier.
 Code hot-reload enables local changes to be automatically propagated to the running container for faster development lifecycle.

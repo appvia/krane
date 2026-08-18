@@ -39,6 +39,10 @@ securityContext: {}
   # runAsNonRoot: true
   # runAsUser: 1000
 
+# The Krane dashboard has no authentication: anything that can reach the service
+# can read your cluster's RBAC. It is a ClusterIP for that reason — use
+# `kubectl port-forward`, a NetworkPolicy, or an authenticating proxy rather than
+# exposing it.
 service:
   type: ClusterIP
   port: 80

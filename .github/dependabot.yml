@@ -1,5 +1,11 @@
 version: 2
 updates:
+- package-ecosystem: npm
+  directory: "/dashboard"
+  schedule:
+    interval: weekly
+  open-pull-requests-limit: 10
+
 - package-ecosystem: bundler
   directory: "/"
   schedule:
