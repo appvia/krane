@@ -146,9 +146,26 @@ module Krane
       #
       # @return [nil]
       def cache_dashboard_data findings
-        dashboard_data_dir = "#{Cli::Helpers::DATA_PATH}/#{@cluster}"
+        dashboard_data_dir = File.join(Cli::Helpers.data_root, @cluster)
         FileUtils.mkdir_p dashboard_data_dir
         File.write("#{dashboard_data_dir}/rbac-findings.json", findings.to_json)
+
+        publish_risk_rules
+        Dashboard::Clusters.record @cluster
+      end
+
+      # Publishes the risk rule definitions the dashboard's Rules page reads.
+      # They are cluster independent, so they live alongside the per-cluster data
+      # rather than inside it.
+      #
+      # @return [nil]
+      def publish_risk_rules
+        source = File.join(Cli::Helpers::APP_ROOT, 'config/rules.yaml')
+        return unless File.exist?(source)
+
+        target_dir = File.join(Cli::Helpers.data_root, 'config')
+        FileUtils.mkdir_p target_dir
+        FileUtils.cp source, File.join(target_dir, 'rules.yaml')
       end
 
       # Delivers Slack notifications

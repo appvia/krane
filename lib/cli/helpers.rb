@@ -17,6 +17,14 @@ module Cli
 
     DATA_PATH = 'dashboard/compiled/data'
 
+    APP_ROOT = File.expand_path(File.join(File.dirname(__FILE__), '../..')).freeze
+
+    # Absolute path to the dashboard data directory. DATA_PATH on its own only
+    # resolves when the process happens to be running from the app root.
+    def self.data_root
+      File.join(APP_ROOT, DATA_PATH)
+    end
+
     def raise_on_cluster_missing options
       raise 'Cluster not defined. Use --cluster [CLUSTER_NAME] to define it.' if options.cluster.blank?
     end
@@ -33,14 +41,12 @@ module Cli
     end
 
     def dashboard_data_exists? cluster
-      f = -> (file) do 
-        File.exist?(File.join(File.expand_path(File.dirname(__FILE__)), '../../', file))
-      end
-
+      # The tree manifest is written last, so its presence means the tree chunks
+      # it refers to are all on disk.
       [
-        f.call("#{DATA_PATH}/#{cluster}/rbac-tree.json"),
-        f.call("#{DATA_PATH}/#{cluster}/rbac-findings.json"),
-      ].all?
+        'tree/manifest.json',
+        'rbac-findings.json',
+      ].all? { |file| File.exist?(File.join(Helpers.data_root, cluster, file)) }
     end
 
   end
