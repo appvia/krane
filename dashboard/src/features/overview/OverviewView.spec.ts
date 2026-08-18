@@ -63,10 +63,23 @@ describe('OverviewView', () => {
     expect(wrapper.find('figure').text()).toContain('4')
   })
 
-  it('shows which cluster and report the numbers came from', async () => {
-    const wrapper = await mountView()
+  it('reports a missing report instead of rendering empty tiles', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((url: string) =>
+        Promise.resolve(
+          url.endsWith('clusters.json')
+            ? new Response(JSON.stringify(CLUSTERS))
+            : new Response('', { status: 404 }),
+        ),
+      ),
+    )
 
-    expect(wrapper.text()).toContain('default cluster')
-    expect(wrapper.text()).toMatch(/reported \w/)
+    const router = createRouter({ history: createWebHashHistory(), routes: [{ path: '/', component: OverviewView }] })
+    await router.push('/')
+    const wrapper = mount(OverviewView, { global: { plugins: [router] } })
+    await vi.waitFor(() => expect(wrapper.text()).toContain('No report yet'))
+
+    expect(wrapper.findAll('a[href*="/findings/"]')).toHaveLength(0)
   })
 })

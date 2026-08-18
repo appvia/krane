@@ -7,14 +7,11 @@ import EmptyState from '@/components/EmptyState.vue'
 import ErrorState from '@/components/ErrorState.vue'
 import LoadingState from '@/components/LoadingState.vue'
 import StatTile from '@/components/StatTile.vue'
-import { formatTimestamp } from '@/lib/format'
 import { useFindingsReport } from '@/lib/report'
 import { SEVERITY_STYLES } from '@/lib/severity'
 import { SEVERITIES, SEVERITY_LABELS } from '@/lib/types'
 
-const { state, error, retry, counts, cluster, entry } = useFindingsReport()
-
-const generatedAt = computed(() => formatTimestamp(entry.value?.generated_at))
+const { state, error, retry, counts, cluster } = useFindingsReport()
 
 const total = computed(() => SEVERITIES.reduce((sum, severity) => sum + counts.value[severity], 0))
 
@@ -53,12 +50,7 @@ const explore = [
         Overview
       </h1>
       <p class="mt-1 text-sm text-muted">
-        <template v-if="cluster">
-          {{ cluster }} cluster
-        </template>
-        <template v-if="generatedAt">
-          · reported {{ generatedAt }}
-        </template>
+        Risk rules evaluated against this cluster's RBAC.
       </p>
     </header>
 

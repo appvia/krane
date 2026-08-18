@@ -32,7 +32,7 @@ export function dataUrl(...segments: string[]): string {
   return new URL(`data/${path}`, document.baseURI).toString()
 }
 
-export async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+async function request(url: string, signal?: AbortSignal): Promise<Response> {
   let response: Response
   try {
     response = await fetch(url, signal ? { signal } : {})
@@ -47,7 +47,15 @@ export async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T
   if (!response.ok) {
     throw new AppError('http', `${url} returned ${response.status}`, response.status)
   }
+  return response
+}
 
+export async function fetchText(url: string, signal?: AbortSignal): Promise<string> {
+  return (await request(url, signal)).text()
+}
+
+export async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+  const response = await request(url, signal)
   try {
     return (await response.json()) as T
   } catch {

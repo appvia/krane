@@ -45,3 +45,18 @@ export type ClustersManifest = {
   default: string
   clusters: ClusterEntry[]
 }
+
+/**
+ * A risk rule as written in config/rules.yaml. Severities are YAML symbols
+ * there (`:danger`), and a rule finds its items either through a built-in
+ * template or a custom graph query.
+ */
+export type Rule = {
+  id: string
+  group_title: string
+  severity: Severity | null
+  info: string
+  template: string | null
+  query: string | null
+  disabled: boolean
+}

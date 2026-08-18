@@ -32,6 +32,12 @@ export function loadClusters(): Promise<ClustersManifest> {
   return inFlight
 }
 
+/** Forgets the cached manifest. Only tests need this; the app loads it once. */
+export function resetClusters(): void {
+  manifest.value = null
+  inFlight = null
+}
+
 /** Allowlists the requested name, falling back to the published default. */
 export function resolveCluster(available: ClustersManifest, requested: string | null): string | null {
   const names = available.clusters.map((entry) => entry.name)

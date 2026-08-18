@@ -26,9 +26,7 @@ const findings = computed(() => (data.value?.results ?? []).filter((item) => ite
         Findings
       </h1>
       <p class="mt-1 text-sm text-muted">
-        <template v-if="cluster">
-          {{ cluster }} cluster
-        </template>
+        Every risk rule that matched, grouped by severity.
       </p>
 
       <nav
