@@ -60,3 +60,25 @@ export type Rule = {
   query: string | null
   disabled: boolean
 }
+
+/**
+ * A node in the published RBAC tree. Per the data contract a node has `nodes`
+ * (children inline), or `chunk` (children live in another file), or neither
+ * (a leaf) — so a chunk may itself hold chunk references.
+ */
+export type RbacTreeNode = {
+  text?: string
+  branch?: string
+  tags?: string[]
+  nodes?: RbacTreeNode[]
+  chunk?: string
+  node_count?: number
+  facet?: string
+  resource_kind?: string
+}
+
+/** search.json: which chunks contain a given (lowercased) node text. */
+export type TreeSearchIndex = {
+  chunks: string[]
+  terms: Record<string, number[]>
+}
