@@ -19,7 +19,7 @@ module Krane
     module TreeView
       class Element < Hashie::Mash
 
-        ALL_NAMESPACES      = '* (All NS)'
+        ALL_NAMESPACES      = Krane::Helpers::ALL_NAMESPACES
         DEFAULT_ROLE_TAG    = 'Default'
         AGGREGABLE_ROLE_TAG = 'Aggregable'
         COMPOSITE_ROLE_TAG  = 'Composite'

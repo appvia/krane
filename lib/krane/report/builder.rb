@@ -191,7 +191,7 @@ module Krane
                         Check bindings below and create Role if required.',
           data:         @ingest[:undefined_roles],
           writer:       -> r do
-                          "#{r.role_kind} #{r.role_name} referenced in #{r.binding_kind} #{r.binding_name}"
+                          "#{r.role_kind} #{name_of(r.role_name)} referenced in #{r.binding_kind} #{name_of(r.binding_name)}"
                         end
         )
 
@@ -203,7 +203,7 @@ module Krane
                         Roles should be reviewed and potentially removed.',
           data:         @ingest[:unused_roles],
           writer:       -> r do
-                          "#{r.role_kind} #{r.role_name}"
+                          "#{r.role_kind} #{name_of(r.role_name)}"
                         end
         )
 
@@ -215,7 +215,7 @@ module Krane
                         Should those bindings exist?',
           data:         @ingest[:bindings_without_subject],
           writer:       -> r do
-                          "#{r.binding_kind} #{r.binding_name}"
+                          "#{r.binding_kind} #{name_of(r.binding_name)}"
                         end
         )
       end

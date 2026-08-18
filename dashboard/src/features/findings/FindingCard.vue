@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 
 import SeverityBadge from '@/components/SeverityBadge.vue'
+import { marked } from '@/features/findings/marked'
 import { SEVERITY_STYLES } from '@/lib/severity'
 import type { Finding } from '@/lib/types'
 
@@ -39,9 +40,13 @@ const style = computed(() => SEVERITY_STYLES[props.finding.status])
       <li
         v-for="(item, index) in items"
         :key="`${finding.id}-${index}`"
-        class="break-words"
+        class="break-words text-muted"
       >
-        {{ item }}
+        <span
+          v-for="(part, at) in marked(item)"
+          :key="at"
+          :class="part.name ? 'font-semibold text-content' : ''"
+        >{{ part.text }}</span>
       </li>
     </ul>
   </article>

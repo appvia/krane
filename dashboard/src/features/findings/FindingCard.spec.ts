@@ -30,6 +30,32 @@ describe('FindingCard', () => {
     expect(wrapper.text()).toContain('<script>alert(2)</script>')
   })
 
+  it('picks the object names out of an item', () => {
+    const wrapper = mount(FindingCard, {
+      props: {
+        finding: {
+          ...finding,
+          items: ['Group `system:bootstrappers` referenced by 4 roles'],
+        },
+      },
+    })
+
+    // The marks themselves are not shown, only their effect.
+    expect(wrapper.get('li').text()).toBe('Group system:bootstrappers referenced by 4 roles')
+    expect(wrapper.get('li .font-semibold').text()).toBe('system:bootstrappers')
+  })
+
+  it('cannot be talked into anything but text by a hostile name', () => {
+    // A backtick in a resource name can bold part of a sentence and nothing
+    // else: every part is a text node.
+    const wrapper = mount(FindingCard, {
+      props: { finding: { ...finding, items: [`ClusterRole \`${HOSTILE}\``] } },
+    })
+
+    expect(wrapper.find('img').exists()).toBe(false)
+    expect(wrapper.get('li').text()).toContain(HOSTILE)
+  })
+
   it('shows how many items the finding matched', () => {
     const wrapper = mount(FindingCard, { props: { finding } })
 
