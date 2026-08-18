@@ -97,6 +97,7 @@ watch(
             <span class="tabular-nums">
               {{ tree.matches.value.total === 0 ? 0 : tree.position.value + 1 }} of
               {{ tree.matches.value.total.toLocaleString() }}
+              <template v-if="tree.unsearched.value.length">in open branches</template>
             </span>
             <button
               type="button"
@@ -136,13 +137,20 @@ watch(
         </div>
       </div>
 
-      <!-- Search only sees loaded branches, so say when there are more to open. -->
+      <!--
+        Search only sees loaded branches. The published index knows the names in
+        the rest without fetching them, so the count comes from there — how the
+        tree is filed into branches is not the reader's problem.
+      -->
       <p
         v-if="tree.unsearched.value.length"
         class="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted"
       >
-        {{ tree.unsearched.value.length }} unopened
-        {{ tree.unsearched.value.length === 1 ? 'branch' : 'branches' }} also contain matches.
+        <span>
+          {{ tree.unopenedNames.value.toLocaleString() }}
+          {{ tree.unopenedNames.value === 1 ? 'name matches' : 'names match' }}
+          in branches you have not opened.
+        </span>
         <button
           type="button"
           class="rounded-md border border-border-subtle px-2 py-1 text-xs font-medium text-content transition hover:bg-surface-2"

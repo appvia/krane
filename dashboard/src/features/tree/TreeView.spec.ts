@@ -25,6 +25,17 @@ const INDEX: RbacTreeNode = {
   ],
 }
 
+const SEARCH = {
+  chunks: ['index.json', 'namespaces/kube-system.json'],
+  terms: { 'default-sa': [1], 'other-sa': [1], 'kube-system': [0] },
+}
+
+function fixtureFor(url: string) {
+  if (url.endsWith('clusters.json')) return CLUSTERS
+  if (url.endsWith('search.json')) return SEARCH
+  return { format_version: 1 }
+}
+
 const loader: TreeLoader = (request) =>
   Promise.resolve(
     flatten(request.url.endsWith('index.json') ? [INDEX] : [{ text: 'default-sa', tags: ['admits'] }], request),
@@ -35,9 +46,7 @@ beforeEach(() => {
   vi.stubGlobal(
     'fetch',
     vi.fn((url: string) =>
-      Promise.resolve(
-        new Response(JSON.stringify(url.endsWith('clusters.json') ? CLUSTERS : { format_version: 1 })),
-      ),
+      Promise.resolve(new Response(JSON.stringify(fixtureFor(url)))),
     ),
   )
   // The virtualiser renders what fits the scroll element, which it measures
@@ -130,6 +139,20 @@ describe('TreeView', () => {
 
     const panel = wrapper.get('[aria-label="Selected node"]')
     expect(panel.text()).toContain('Namespace kube-system admits default-sa')
+  })
+
+  it('reports names from the index for branches it has not opened', async () => {
+    const wrapper = await mountView()
+
+    await wrapper.get('input[type="search"]').setValue('sa')
+    await vi.waitFor(() => expect(wrapper.text()).toContain('names match in branches you have not opened'))
+
+    // Two names in the index match, in the one branch holding them: the reader
+    // is told about the names, not about the filing.
+    expect(wrapper.text()).toContain('2 names match')
+    expect(wrapper.text()).not.toContain('branches also contain')
+    // And the counter says what its own zero means.
+    expect(wrapper.text()).toContain('0 of 0 in open branches')
   })
 
   it('highlights matches and counts them', async () => {

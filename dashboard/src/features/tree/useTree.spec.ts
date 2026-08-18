@@ -4,7 +4,7 @@ import { defineComponent, h } from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
 
 import { flatten } from '@/features/tree/flatten'
-import { chunkUrl, chunksMatching, useTree, type TreeLoader } from '@/features/tree/useTree'
+import { chunkUrl, unopenedMatches, useTree, type TreeLoader } from '@/features/tree/useTree'
 import { resetClusters } from '@/lib/cluster'
 import type { RbacTreeNode, TreeSearchIndex } from '@/lib/types'
 
@@ -368,15 +368,35 @@ describe('chunkUrl', () => {
   })
 })
 
-describe('chunksMatching', () => {
+describe('unopenedMatches', () => {
+  const nothingOpen = () => false
+
   it('finds the chunks whose contents match, ignoring the index itself', () => {
-    expect(chunksMatching(SEARCH, 'sa')).toEqual(['namespaces/kube-system.json'])
-    expect(chunksMatching(SEARCH, 'KUBE-SYSTEM')).toEqual([])
-    expect(chunksMatching(SEARCH, 'actor')).toEqual(['subjects/serviceaccount.json'])
+    expect(unopenedMatches(SEARCH, 'sa', nothingOpen).chunks).toEqual(['namespaces/kube-system.json'])
+    // 'kube-system' is a name in the index, which is always loaded.
+    expect(unopenedMatches(SEARCH, 'KUBE-SYSTEM', nothingOpen).chunks).toEqual([])
+    expect(unopenedMatches(SEARCH, 'actor', nothingOpen).chunks).toEqual(['subjects/serviceaccount.json'])
+  })
+
+  it('counts the names that match, not the branches holding them', () => {
+    // 'default-sa', 'hidden-actor' and 'watch-buried-verb' all contain an 'a',
+    // and the last of them is filed under two chunks: three names, four
+    // branches. The two numbers are not the same question.
+    const found = unopenedMatches(SEARCH, 'a', nothingOpen)
+
+    expect(found.names).toBe(3)
+    expect(found.chunks).toHaveLength(4)
+  })
+
+  it('stops counting a name once the branch holding it is open', () => {
+    const open = (chunk: string) => chunk === 'namespaces/kube-system.json'
+
+    expect(unopenedMatches(SEARCH, 'default-sa', open)).toEqual({ chunks: [], names: 0 })
+    expect(unopenedMatches(SEARCH, 'default-sa', nothingOpen).names).toBe(1)
   })
 
   it('has nothing to say without an index or a query', () => {
-    expect(chunksMatching(null, 'sa')).toEqual([])
-    expect(chunksMatching(SEARCH, ' ')).toEqual([])
+    expect(unopenedMatches(null, 'sa', nothingOpen)).toEqual({ chunks: [], names: 0 })
+    expect(unopenedMatches(SEARCH, ' ', nothingOpen)).toEqual({ chunks: [], names: 0 })
   })
 })

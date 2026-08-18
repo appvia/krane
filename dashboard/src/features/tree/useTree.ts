@@ -49,19 +49,50 @@ export function chunkUrl(base: string, chunk: string): string {
   return `${base}/${chunk}`
 }
 
-/** Chunk paths whose contents match the query, from the published search index. */
-export function chunksMatching(index: TreeSearchIndex | null, query: string): string[] {
-  const needle = query.trim().toLowerCase()
-  if (!index || needle === '') return []
+export type UnopenedMatches = {
+  /** Chunks holding a match that have not been loaded. */
+  chunks: string[]
+  /**
+   * How many distinct names match. The index is keyed by name, so this counts
+   * names rather than the places they appear — the tree's own counter counts
+   * every occurrence once a branch is open, which is a larger number.
+   */
+  names: number
+}
 
-  const matched = new Set<number>()
-  for (const [term, chunks] of Object.entries(index.terms ?? {})) {
-    if (term.includes(needle)) for (const chunk of chunks) matched.add(chunk)
+/**
+ * What the published index knows about matches the tree cannot see yet. The
+ * index is the only way to answer this without downloading branches, which is
+ * the point: it costs nothing to say a match is out there.
+ */
+export function unopenedMatches(
+  index: TreeSearchIndex | null,
+  query: string,
+  isOpen: (chunk: string) => boolean,
+): UnopenedMatches {
+  const needle = query.trim().toLowerCase()
+  if (!index || needle === '') return { chunks: [], names: 0 }
+
+  const paths = index.chunks ?? []
+  const chunks = new Set<string>()
+  let names = 0
+
+  for (const [term, positions] of Object.entries(index.terms ?? {})) {
+    if (!term.includes(needle)) continue
+
+    const shut = positions
+      .map((position) => paths[position])
+      // index.json is always loaded, so a name only found there is already
+      // in front of the reader.
+      .filter((path): path is string => typeof path === 'string' && path !== 'index.json' && !isOpen(path))
+
+    if (shut.length === 0) continue
+
+    names += 1
+    for (const path of shut) chunks.add(path)
   }
 
-  return [...matched]
-    .map((position) => (index.chunks ?? [])[position])
-    .filter((path): path is string => typeof path === 'string' && path !== 'index.json')
+  return { chunks: [...chunks], names }
 }
 
 /**
@@ -202,13 +233,15 @@ export function useTree(loader?: TreeLoader) {
 
   const current = computed(() => matches.value.ids[position.value] ?? null)
 
-  /** Branches that contain a match but have not been opened yet. */
-  const unsearched = computed(() => {
+  /** What the index says is out there but not loaded: branches, and names. */
+  const unopened = computed(() => {
     void loadedVersion.value
-    return chunksMatching(source.data.value?.index ?? null, applied.value).filter(
-      (chunk) => !store.grafted.has(chunk),
+    return unopenedMatches(source.data.value?.index ?? null, applied.value, (chunk) =>
+      store.grafted.has(chunk),
     )
   })
+
+  const unsearched = computed(() => unopened.value.chunks)
 
   let debounce: ReturnType<typeof setTimeout> | undefined
   watch(query, (value) => {
@@ -347,6 +380,7 @@ export function useTree(loader?: TreeLoader) {
     current,
     position,
     unsearched,
+    unopenedNames: computed(() => unopened.value.names),
     query,
     chunkError,
     details,
