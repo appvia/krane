@@ -54,15 +54,36 @@ export function orphans(map: Adjacency): string[] {
   return [...map].filter(([, neighbours]) => neighbours.size === 0).map(([id]) => id)
 }
 
-/**
- * Which nodes changed between two highlights. Repainting every node on every
- * click is what made the old graph stutter on anything but a small cluster.
+/** Labels are published as "Kind: name", with a namespace in brackets for the
+ * things that have one: "Role: view (kube-system)".
  */
-export function changed(previous: ReadonlySet<string>, next: ReadonlySet<string>): string[] {
-  const ids: string[] = []
-  for (const id of previous) if (!next.has(id)) ids.push(id)
-  for (const id of next) if (!previous.has(id)) ids.push(id)
-  return ids
+export function nodeName(label: string): string {
+  const separator = label.indexOf(': ')
+  return separator === -1 ? label : label.slice(separator + 2)
+}
+
+/** Nodes whose label contains the query, for the search box. */
+export function matching(nodes: readonly NetworkNode[], query: string, limit = 50): NetworkNode[] {
+  const needle = query.trim().toLowerCase()
+  if (needle === '') return []
+
+  return nodes.filter((node) => node.label.toLowerCase().includes(needle)).slice(0, limit)
+}
+
+/**
+ * The graph nodes a name from the tree refers to. The tree names a role without
+ * the namespace the graph appends, so that is tried second — and more than one
+ * node can answer to a name, in which case the caller has a choice to offer
+ * rather than a guess to make.
+ */
+export function resolve(nodes: readonly NetworkNode[], name: string): NetworkNode[] {
+  const wanted = name.trim()
+  if (wanted === '') return []
+
+  const exact = nodes.filter((node) => nodeName(node.label) === wanted)
+  if (exact.length > 0) return exact
+
+  return nodes.filter((node) => nodeName(node.label).replace(/ \([^)]*\)$/, '') === wanted)
 }
 
 /**

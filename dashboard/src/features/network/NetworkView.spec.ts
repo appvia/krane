@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createRouter, createWebHashHistory } from 'vue-router'
 
 import NetworkView from '@/features/network/NetworkView.vue'
-import type { NetworkFactory, NetworkHandle } from '@/features/network/useVisNetwork'
+import type { NetworkFactory } from '@/features/network/useVisNetwork'
 import { resetClusters } from '@/lib/cluster'
 
 const CLUSTERS = { default: 'default', clusters: [{ name: 'default', generated_at: '2026-08-18T09:26:04Z' }] }
@@ -23,57 +23,68 @@ const NETWORK = {
 
 type Listener = (params: { nodes?: string[]; iterations?: number; total?: number }) => void
 
-/** A stand-in for vis-network: records what it was asked to do. */
+/** A stand-in for vis-network: records what it was handed and asked to do. */
 function fakeNetwork() {
   const listeners = new Map<string, Listener>()
-  const updates: unknown[][] = []
+  const drawn: { nodes: string[]; edges: string[] }[] = []
   const calls = { destroyed: 0, fitted: 0, options: [] as Record<string, unknown>[] }
-  let handle: NetworkHandle | null = null
 
   const createNetwork: NetworkFactory = (_container, data, options) => {
     calls.options.push(options)
-    const originalUpdate = data.nodes.update.bind(data.nodes)
-    data.nodes.update = ((items: unknown) => {
-      updates.push(Array.isArray(items) ? items : [items])
-      return originalUpdate(items as never)
-    }) as typeof data.nodes.update
+    drawn.push({
+      nodes: data.nodes.getIds().map(String),
+      edges: data.edges.getIds().map(String),
+    })
 
-    handle = {
+    return {
       on: (event, callback) => listeners.set(event, callback),
       destroy: () => (calls.destroyed += 1),
       fit: () => (calls.fitted += 1),
-      setOptions: (options) => calls.options.push(options),
+      setOptions: (settings) => calls.options.push(settings),
     }
-    return handle
   }
 
   return {
     createNetwork,
-    updates,
+    drawn,
+    latest: () => drawn[drawn.length - 1],
     calls,
     emit: (event: string, params: Parameters<Listener>[0] = {}) => listeners.get(event)?.(params),
   }
 }
 
+// Same name in two namespaces, which the tree cannot tell apart.
+const AMBIGUOUS = {
+  network_nodes: [
+    ...NETWORK.network_nodes,
+    { id: '5', label: 'Role: ambiguous (kube-system)', group: 2, value: 1, title: 'One' },
+    { id: '6', label: 'Role: ambiguous (default)', group: 2, value: 1, title: 'Two' },
+  ],
+  network_edges: NETWORK.network_edges,
+}
+
+let fixture: typeof NETWORK = NETWORK
+
 beforeEach(() => {
+  fixture = NETWORK
   resetClusters()
   vi.stubGlobal(
     'fetch',
     vi.fn((url: string) =>
-      Promise.resolve(new Response(JSON.stringify(url.endsWith('clusters.json') ? CLUSTERS : NETWORK))),
+      Promise.resolve(new Response(JSON.stringify(url.endsWith('clusters.json') ? CLUSTERS : fixture))),
     ),
   )
 })
 
 afterEach(() => vi.unstubAllGlobals())
 
-async function mountView() {
+async function mountView(query: Record<string, string> = {}) {
   const vis = fakeNetwork()
   const router = createRouter({
     history: createWebHashHistory(),
-    routes: [{ path: '/network', component: NetworkView }],
+    routes: [{ path: '/network', name: 'network', component: NetworkView }],
   })
-  await router.push('/network')
+  await router.push({ name: 'network', query })
   await router.isReady()
 
   const wrapper = mount(NetworkView, {
@@ -94,22 +105,36 @@ describe('NetworkView', () => {
     expect(wrapper.text()).toContain('1 unconnected')
   })
 
-  it('repaints only the nodes whose highlight changed', async () => {
-    const { vis } = await mountView()
-    vis.updates.length = 0
+  it('draws only the neighbourhood of the node clicked', async () => {
+    const { wrapper, vis } = await mountView()
 
-    // Focusing node 1 dims node 4: 1, 2 and 3 are within two degrees.
+    expect(vis.latest()?.nodes).toEqual(['1', '2', '3', '4'])
+
+    // Node 4 is unconnected, so it is not within any number of hops of node 1.
     vis.emit('click', { nodes: ['1'] })
-    expect(vis.updates).toHaveLength(1)
-    expect(vis.updates[0]?.map((item) => (item as { id: string }).id)).toEqual(['4'])
+    await vi.waitFor(() => expect(vis.latest()?.nodes).toEqual(['1', '2', '3']))
+    expect(vis.latest()?.edges).toEqual(['1->2', '2->3'])
+    expect(wrapper.text()).toContain('3 of 4 nodes')
+  })
 
-    // Moving to node 2 changes nothing: the same three stay highlighted.
-    vis.emit('click', { nodes: ['2'] })
-    expect(vis.updates).toHaveLength(1)
+  it('narrows to fewer hops on request', async () => {
+    const { wrapper, vis } = await mountView()
 
-    // Clearing the focus brings back exactly the node that was dimmed.
-    vis.emit('click', { nodes: [] })
-    expect(vis.updates[1]?.map((item) => (item as { id: string }).id)).toEqual(['4'])
+    vis.emit('click', { nodes: ['1'] })
+    await vi.waitFor(() => expect(vis.latest()?.nodes).toHaveLength(3))
+
+    await wrapper.get('select').setValue('1')
+    await vi.waitFor(() => expect(vis.latest()?.nodes).toEqual(['1', '2']))
+  })
+
+  it('goes back to the whole graph', async () => {
+    const { wrapper, vis } = await mountView()
+
+    vis.emit('click', { nodes: ['1'] })
+    await vi.waitFor(() => expect(vis.latest()?.nodes).toHaveLength(3))
+
+    await wrapper.get('button[type="button"]').trigger('click') // Whole graph
+    await vi.waitFor(() => expect(vis.latest()?.nodes).toHaveLength(4))
   })
 
   it('describes the clicked node, as text', async () => {
@@ -120,7 +145,14 @@ describe('NetworkView', () => {
 
     expect(wrapper.text()).toContain('<img src=x onerror="alert(1)">')
     expect(wrapper.find('img').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Connected to 2')
+    expect(wrapper.text()).toContain('Directly connected to 2')
+  })
+
+  it('lists what nothing is bound to while nothing is selected', async () => {
+    const { wrapper } = await mountView()
+
+    expect(wrapper.text()).toContain('1 unconnected')
+    expect(wrapper.text()).toContain('ClusterRole: orphaned')
   })
 
   it('says a node is unconnected rather than leaving the panel blank', async () => {
@@ -128,6 +160,34 @@ describe('NetworkView', () => {
 
     vis.emit('click', { nodes: ['4'] })
     await vi.waitFor(() => expect(wrapper.text()).toContain('Nothing is connected to this node.'))
+  })
+
+  it('opens on the node the tree sent it to', async () => {
+    // The tree links by the name in front of the reader, not by an id.
+    const { wrapper, vis } = await mountView({ focus: 'kube-system' })
+
+    await vi.waitFor(() => expect(vis.latest()?.nodes).toEqual(['1', '2', '3']))
+    expect(wrapper.text()).toContain('Namespace: kube-system')
+  })
+
+  it('offers the choice when a name means more than one node', async () => {
+    fixture = AMBIGUOUS
+    const { wrapper, vis } = await mountView({ focus: 'ambiguous' })
+
+    // Two nodes answer to it, so the search is filled in rather than guessed at.
+    await vi.waitFor(() => expect(wrapper.text()).toContain('2 matches'))
+    expect(vis.latest()?.nodes).toHaveLength(6) // still the whole graph
+  })
+
+  it('searches by label and focuses what is picked', async () => {
+    const { wrapper, vis } = await mountView()
+
+    await wrapper.get('input[type="search"]').setValue('serviceaccount')
+    expect(wrapper.text()).toContain('1 match')
+
+    await wrapper.get('aside button').trigger('click')
+    // Drawn outward from the node picked, so the order follows the hops.
+    await vi.waitFor(() => expect(vis.latest()?.nodes).toEqual(['2', '1', '3']))
   })
 
   it('shows layout progress and stops the physics once it settles', async () => {

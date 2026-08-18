@@ -1,15 +1,17 @@
 // Owns the vis-network instance: created on mount, destroyed with the scope.
-// The old graph leaked one Network per navigation, and repainted every node on
-// every click; this repaints only what changed.
+//
+// The graph draws one neighbourhood at a time rather than the whole cluster.
+// Everything at once is a hairball on any cluster big enough to need help — and
+// the questions worth asking of RBAC are local: what can this subject reach, and
+// what is attached to this role.
 
 import { DataSet } from 'vis-data'
-import { computed, onScopeDispose, ref, shallowRef, watch, type Ref } from 'vue'
+import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 
-import { adjacency, changed, kindOf, neighbourhood, orphans, tooltip } from '@/features/network/graph'
+import { adjacency, kindOf, neighbourhood, orphans, tooltip } from '@/features/network/graph'
 import type { NetworkData, NetworkNode } from '@/lib/types'
 
 const FIT_THROTTLE_MS = 200
-const HIGHLIGHT_DEGREES = 2
 
 /** What this needs from vis-network, so tests can hand it something simpler. */
 export type NetworkHandle = {
@@ -30,10 +32,9 @@ export type NetworkFactory = (
 
 type Palette = {
   kinds: Record<string, string>
-  dim: string
+  edge: string
   border: string
   font: string
-  dimFont: string
   orphan: string
 }
 
@@ -50,64 +51,67 @@ function palette(): Palette {
       Subject: token('--krane-sev-success', '#12b76a'),
       'Pod security policy': token('--krane-sev-danger', '#d92d20'),
     },
-    dim: token('--krane-border', '#e2e8f0'),
+    edge: token('--krane-border', '#e2e8f0'),
     border: token('--krane-surface', '#ffffff'),
     font: token('--krane-text', '#0f172a'),
-    dimFont: token('--krane-muted', '#64748b'),
     orphan: token('--krane-sev-warning', '#f79009'),
   }
 }
 
-function paint(node: NetworkNode, colours: Palette, highlighted: boolean, isOrphan: boolean) {
-  const base = colours.kinds[kindOf(node.group)] ?? colours.dim
+function paint(node: NetworkNode, colours: Palette, isOrphan: boolean, isFocus: boolean) {
+  const base = colours.kinds[kindOf(node.group)] ?? colours.edge
   return {
-    id: node.id,
     color: {
-      background: highlighted ? base : colours.dim,
-      border: isOrphan ? colours.orphan : highlighted ? base : colours.dim,
-      highlight: { background: base, border: colours.orphan },
+      background: base,
+      border: isOrphan ? colours.orphan : isFocus ? colours.font : base,
+      highlight: { background: base, border: colours.font },
     },
-    borderWidth: isOrphan ? 3 : 1,
-    font: { color: highlighted ? colours.font : colours.dimFont },
+    borderWidth: isOrphan || isFocus ? 3 : 1,
+    font: { color: colours.font },
   }
 }
 
 export function useVisNetwork(
   container: Ref<HTMLElement | null>,
   data: Ref<NetworkData | null>,
+  focus: Ref<string | null>,
+  degrees: Ref<number>,
   createNetwork: NetworkFactory,
 ) {
   const stabilizing = ref(false)
   const progress = ref(0)
-  const selected = shallowRef<NetworkNode | null>(null)
-  const orphaned = shallowRef(new Set<string>())
 
   let network: NetworkHandle | null = null
-  let nodes: DataSet<NetworkNode> | null = null
-  let byId = new Map<string, NetworkNode>()
-  let links = adjacency([], [])
-
-  /** Currently undimmed nodes; everything else is greyed out. */
-  let highlighted = new Set<string>()
   let colours = palette()
 
-  function repaint(ids: Iterable<string>) {
-    if (!nodes) return
-    const updates = []
-    for (const id of ids) {
-      const node = byId.get(id)
-      if (node) updates.push(paint(node, colours, highlighted.has(id), orphaned.value.has(id)))
-    }
-    if (updates.length > 0) nodes.update(updates)
-  }
+  // Everything about the graph is derived from the published data, so it is
+  // derived rather than rebuilt into fields: a plain field assigned inside the
+  // render would leave the panel reading a map that no longer exists.
+  const nodes = computed(() => data.value?.network_nodes ?? [])
+  const edges = computed(() => data.value?.network_edges ?? [])
+  const byId = computed(() => new Map(nodes.value.map((node) => [node.id, node])))
+  const links = computed(() => adjacency(nodes.value, edges.value))
+  const orphaned = computed(() => new Set(orphans(links.value)))
 
-  function focus(id: string | null) {
-    const next = id === null ? new Set(byId.keys()) : neighbourhood(links, id, HIGHLIGHT_DEGREES)
-    const difference = changed(highlighted, next)
-    highlighted = next
-    repaint(difference)
-    selected.value = id === null ? null : (byId.get(id) ?? null)
-  }
+  /** The nodes on screen: one neighbourhood, or everything when nothing is picked. */
+  const visible = computed(() =>
+    focus.value !== null && byId.value.has(focus.value)
+      ? neighbourhood(links.value, focus.value, degrees.value)
+      : new Set(byId.value.keys()),
+  )
+
+  const selected = computed(() => (focus.value === null ? null : (byId.value.get(focus.value) ?? null)))
+
+  const neighbours = computed(() => {
+    if (focus.value === null) return []
+    return [...(links.value.get(focus.value) ?? [])]
+      .map((id) => byId.value.get(id))
+      .filter((node): node is NetworkNode => node !== undefined)
+  })
+
+  const unconnected = computed(() =>
+    [...orphaned.value].map((id) => byId.value.get(id)).filter((node): node is NetworkNode => node !== undefined),
+  )
 
   // A graph laid out for a narrow pane is unreadable once the pane grows.
   let fitTimer: ReturnType<typeof setTimeout> | undefined
@@ -131,39 +135,38 @@ export function useVisNetwork(
     network?.destroy()
     observe(element)
 
-    byId = new Map(source.network_nodes.map((node) => [node.id, node]))
-    links = adjacency(source.network_nodes, source.network_edges)
-    orphaned.value = new Set(orphans(links))
-    highlighted = new Set(byId.keys())
     colours = palette()
+    const drawn = visible.value
 
-    nodes = new DataSet(
-      source.network_nodes.map((node) => ({
+    const shown = new DataSet(
+      [...drawn].map((id) => byId.value.get(id) as NetworkNode).map((node) => ({
         ...node,
         // An element, not an HTML string: titles are built from RBAC.
         title: tooltip(node.title, document) as unknown as string,
-        ...paint(node, colours, true, orphaned.value.has(node.id)),
+        ...paint(node, colours, orphaned.value.has(node.id), node.id === focus.value),
       })),
     )
-    // Keyed by the pair, which also drops any duplicates in the published data.
-    const edges = new DataSet([
+
+    const drawnEdges = new DataSet([
       ...new Map(
-        source.network_edges.map((edge) => [`${edge.from}->${edge.to}`, { id: `${edge.from}->${edge.to}`, ...edge }]),
+        source.network_edges
+          .filter((edge) => drawn.has(edge.from) && drawn.has(edge.to))
+          .map((edge) => [`${edge.from}->${edge.to}`, { id: `${edge.from}->${edge.to}`, ...edge }]),
       ).values(),
     ])
 
     stabilizing.value = true
     progress.value = 0
 
-    network = createNetwork(element, { nodes, edges }, {
+    network = createNetwork(element, { nodes: shown, edges: drawnEdges }, {
       nodes: {
         shape: 'dot',
         scaling: { min: 8, max: 32, label: { min: 10, max: 22, drawThreshold: 10, maxVisible: 24 } },
       },
       edges: {
-        width: 0.4,
+        width: 0.6,
         selectionWidth: 3,
-        color: { color: colours.dim, highlight: colours.dimFont, inherit: false },
+        color: { color: colours.edge, highlight: colours.font, inherit: false },
         smooth: { type: 'continuous' },
       },
       layout: { improvedLayout: false },
@@ -175,7 +178,11 @@ export function useVisNetwork(
       interaction: { tooltipDelay: 200, hideEdgesOnDrag: true, hideEdgesOnZoom: true },
     })
 
-    network.on('click', (params) => focus(params.nodes?.[0] ?? null))
+    // Clicking walks the graph: the node clicked becomes the new centre.
+    network.on('click', (params) => {
+      const clicked = params.nodes?.[0]
+      if (clicked !== undefined) focus.value = clicked
+    })
 
     network.on('stabilizationProgress', (params) => {
       progress.value = params.total ? Math.round(((params.iterations ?? 0) / params.total) * 100) : 0
@@ -192,7 +199,7 @@ export function useVisNetwork(
 
   // The container only exists once the data has loaded and the view has
   // rendered, so both are watched, after the DOM update rather than before it.
-  watch([container, data], build, { flush: 'post' })
+  watch([container, data, focus, degrees], build, { flush: 'post' })
 
   onScopeDispose(() => {
     clearTimeout(fitTimer)
@@ -205,14 +212,13 @@ export function useVisNetwork(
     stabilizing,
     progress,
     selected,
+    neighbours,
+    unconnected,
+    nodes,
+    drawn: computed(() => visible.value.size),
     orphanCount: computed(() => orphaned.value.size),
-    neighbours: (id: string) => [...(links.get(id) ?? [])].map((neighbour) => byId.get(neighbour)?.label ?? neighbour),
-    /** Re-reads the theme tokens and repaints every node. */
-    retheme: () => {
-      colours = palette()
-      repaint(byId.keys())
-    },
-    reset: () => focus(null),
+    /** Re-reads the theme tokens and redraws. */
+    retheme: build,
     fit: () => network?.fit(),
   }
 }

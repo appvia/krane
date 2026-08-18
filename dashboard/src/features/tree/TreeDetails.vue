@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Network } from 'lucide-vue-next'
+
 import type { SentencePart } from '@/features/tree/sentence'
 
 defineProps<{
@@ -49,6 +51,19 @@ defineProps<{
           class="break-words"
         >{{ index > 0 ? ' ' : '' }}{{ part.text }}</span>
       </p>
+
+      <!-- The graph answers a different question about the same thing: not what
+           this grants, but what else is attached to it. -->
+      <RouterLink
+        :to="{ name: 'network', query: { focus: details.text } }"
+        class="mt-4 inline-flex items-center gap-2 rounded-md border border-border-subtle px-3 py-1.5 text-sm font-medium transition hover:bg-surface-2"
+      >
+        <Network
+          :size="14"
+          aria-hidden="true"
+        />
+        Show in graph
+      </RouterLink>
 
       <dl class="mt-5 space-y-3 text-sm">
         <div v-if="details.children">

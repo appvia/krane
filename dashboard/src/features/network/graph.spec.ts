@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
-import { adjacency, changed, kindOf, neighbourhood, orphans, tooltip } from '@/features/network/graph'
+import {
+  adjacency,
+  kindOf,
+  matching,
+  neighbourhood,
+  nodeName,
+  orphans,
+  resolve,
+  tooltip,
+} from '@/features/network/graph'
 import type { NetworkEdge, NetworkNode } from '@/lib/types'
 
 function node(id: string, group = 0): NetworkNode {
@@ -71,22 +80,68 @@ describe('orphans', () => {
   })
 })
 
-describe('changed', () => {
-  it('reports only what has to be repainted', () => {
-    const previous = new Set(['a', 'b', 'c'])
-    const next = new Set(['b', 'c', 'd'])
+const LABELLED: NetworkNode[] = [
+  { id: '1', label: 'Namespace: kube-system', group: 0, value: 1, title: '' },
+  { id: '2', label: 'Role: view (kube-system)', group: 2, value: 1, title: '' },
+  { id: '3', label: 'ClusterRole: view', group: 12, value: 1, title: '' },
+  { id: '4', label: 'ServiceAccount: coredns (kube-system)', group: 3, value: 1, title: '' },
+]
 
-    expect(changed(previous, next).sort()).toEqual(['a', 'd'])
+describe('nodeName', () => {
+  it('drops the kind the label is prefixed with', () => {
+    expect(nodeName('Namespace: kube-system')).toBe('kube-system')
+    // Role names contain colons of their own, so only the first one counts.
+    expect(nodeName('ClusterRole: system:controller:attachdetach-controller')).toBe(
+      'system:controller:attachdetach-controller',
+    )
   })
 
-  it('reports nothing when the highlight has not moved', () => {
-    const same = new Set(['a', 'b'])
-    expect(changed(same, new Set(same))).toEqual([])
+  it('leaves a label with no kind alone', () => {
+    expect(nodeName('unlabelled')).toBe('unlabelled')
+  })
+})
+
+describe('matching', () => {
+  it('searches the whole label, case insensitively', () => {
+    expect(matching(LABELLED, 'KUBE-SYSTEM').map((node) => node.id)).toEqual(['1', '2', '4'])
+    expect(matching(LABELLED, 'clusterrole').map((node) => node.id)).toEqual(['3'])
   })
 
-  it('reports every dimmed node when the focus is cleared', () => {
-    const all = new Set(['a', 'b', 'c', 'd', 'e'])
-    expect(changed(neighbourhood(adjacency(NODES, EDGES), 'a'), all).sort()).toEqual(['d', 'e'])
+  it('caps what it returns, and says nothing for an empty query', () => {
+    expect(matching(LABELLED, 'e', 2)).toHaveLength(2)
+    expect(matching(LABELLED, '  ')).toEqual([])
+  })
+})
+
+describe('resolve', () => {
+  it('finds the node a name from the tree refers to', () => {
+    expect(resolve(LABELLED, 'kube-system').map((node) => node.id)).toEqual(['1'])
+    expect(resolve(LABELLED, 'coredns (kube-system)').map((node) => node.id)).toEqual(['4'])
+  })
+
+  it('falls back to ignoring the namespace the graph appends', () => {
+    // The tree names a namespaced role without the namespace the graph adds.
+    const namespaced = LABELLED.filter((node) => node.id !== '3')
+    expect(resolve(namespaced, 'view').map((node) => node.id)).toEqual(['2'])
+  })
+
+  it('prefers an exact name to the fallback', () => {
+    // With a ClusterRole named exactly 'view', the namespaced Role is not a
+    // guess worth offering.
+    expect(resolve(LABELLED, 'view').map((node) => node.id)).toEqual(['3'])
+  })
+
+  it('offers every node answering to the same name rather than picking one', () => {
+    const twins: NetworkNode[] = [
+      { id: '5', label: 'Role: reader (a)', group: 2, value: 1, title: '' },
+      { id: '6', label: 'Role: reader (b)', group: 2, value: 1, title: '' },
+    ]
+    expect(resolve(twins, 'reader').map((node) => node.id)).toEqual(['5', '6'])
+  })
+
+  it('finds nothing for a name that is not there', () => {
+    expect(resolve(LABELLED, 'nope')).toEqual([])
+    expect(resolve(LABELLED, ' ')).toEqual([])
   })
 })
 

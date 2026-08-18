@@ -70,7 +70,11 @@ afterEach(() => vi.unstubAllGlobals())
 async function mountView() {
   const router = createRouter({
     history: createWebHashHistory(),
-    routes: [{ path: '/tree', component: TreeView }],
+    routes: [
+      { path: '/tree', component: TreeView },
+      // The detail panel links a selected node into the graph.
+      { path: '/network', name: 'network', component: { template: '<div />' } },
+    ],
   })
   await router.push('/tree')
   await router.isReady()
@@ -118,7 +122,10 @@ describe('TreeView', () => {
 
     const router = createRouter({
       history: createWebHashHistory(),
-      routes: [{ path: '/tree', component: TreeView }],
+      routes: [
+        { path: '/tree', component: TreeView },
+        { path: '/network', name: 'network', component: { template: '<div />' } },
+      ],
     })
     await router.push('/tree')
     const wrapper = mount(TreeView, { props: { loader: pruned }, global: { plugins: [router] } })
