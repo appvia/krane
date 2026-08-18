@@ -27,7 +27,7 @@ const INDEX: RbacTreeNode = {
 
 const loader: TreeLoader = (request) =>
   Promise.resolve(
-    flatten(request.url.endsWith('index.json') ? [INDEX] : [{ text: 'default-sa' }], request),
+    flatten(request.url.endsWith('index.json') ? [INDEX] : [{ text: 'default-sa', tags: ['admits'] }], request),
   )
 
 beforeEach(() => {
@@ -119,6 +119,17 @@ describe('TreeView', () => {
     await wrapper.get('[aria-label="Expand kube-system"]').trigger('click')
 
     await vi.waitFor(() => expect(wrapper.text()).toContain('regenerated since this page loaded'))
+  })
+
+  it('reads the selected path back as a sentence, spaced', async () => {
+    const wrapper = await mountView()
+
+    await wrapper.get('[aria-label="Expand Namespaces"]').trigger('click')
+    await wrapper.get('[aria-label="Expand kube-system"]').trigger('click')
+    await wrapper.findAll('[role="treeitem"] button').at(-1)!.trigger('click')
+
+    const panel = wrapper.get('[aria-label="Selected node"]')
+    expect(panel.text()).toContain('Namespace kube-system admits default-sa')
   })
 
   it('highlights matches and counts them', async () => {

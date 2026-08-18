@@ -32,7 +32,10 @@ const INDEX: RbacTreeNode = {
 }
 
 const CHUNKS: Record<string, RbacTreeNode[]> = {
-  'namespaces/kube-system.json': [{ text: 'default-sa', nodes: [{ text: 'secrets get' }] }, { text: 'other-sa' }],
+  'namespaces/kube-system.json': [
+    { text: 'default-sa', tags: ['admits'], nodes: [{ text: 'secrets get', tags: ['can'] }] },
+    { text: 'other-sa', tags: ['admits'] },
+  ],
   'subjects/serviceaccount.json': [{ text: 'hidden-actor' }],
   // A chunk too big to hand over in one file: its heaviest branch was written to
   // a chunk of its own, which is only reachable once this one is loaded.
@@ -264,6 +267,29 @@ describe('useTree', () => {
       path: ['default cluster', 'Namespaces'],
       hidden: 3,
     })
+  })
+
+  it('reads the path to a leaf back as a sentence', async () => {
+    stubFetch()
+    const { load } = loader()
+    const { tree } = await mountTree(load)
+
+    const row = (text: string) => tree.rows.value.find((candidate) => candidate.text === text)!
+
+    await tree.toggle(row('Namespaces').id)
+    await tree.toggle(row('kube-system').id) // arrives from a chunk
+    await tree.toggle(row('default-sa').id)
+    tree.select(row('secrets get').id)
+
+    // The cluster root and the facet wrapper are scaffolding and stay out of it.
+    expect(tree.details.value?.sentence.map((part) => part.text).join(' ')).toBe(
+      'Namespace kube-system admits default-sa can secrets get',
+    )
+    expect(tree.details.value?.sentence.filter((part) => part.subject).map((part) => part.text)).toEqual([
+      'kube-system',
+      'default-sa',
+      'secrets get',
+    ])
   })
 
   it('refuses to load without a manifest, because the data may be half written', async () => {

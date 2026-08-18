@@ -5,6 +5,7 @@
 import { computed, onScopeDispose, ref, shallowRef, watch } from 'vue'
 
 import { flatten, type FlatNodes } from '@/features/tree/flatten'
+import { describe } from '@/features/tree/sentence'
 import { TreeStore } from '@/features/tree/store'
 import { AppError, dataUrl, fetchJson, toAppError } from '@/lib/api'
 import { useAsyncData } from '@/lib/async'
@@ -36,6 +37,11 @@ export type TreeRow = {
   loading: boolean
   /** Nodes hidden behind an unloaded chunk, for showing what an expand costs. */
   hidden: number
+}
+
+/** Tags are stored joined for display; the first is the one that joins levels. */
+function firstTag(tags: string): string {
+  return tags.split(', ')[0] ?? ''
 }
 
 export function chunkUrl(base: string, chunk: string): string {
@@ -303,12 +309,20 @@ export function useTree(loader?: TreeLoader) {
     const id = selected.value
     if (id === null || id >= store.size) return null
 
+    // The cluster root and the facet wrapper below it are scaffolding, not part
+    // of what the path says: the sentence starts at the namespace, actor, role
+    // or resource itself.
+    const path = [...store.ancestors(id), id].slice(2)
+
     return {
       id,
       text: store.texts[id] ?? '',
       branch: store.branches[id] ?? '',
       tags: store.tags[id] ?? '',
       path: store.ancestors(id).map((ancestor) => store.texts[ancestor] ?? ''),
+      sentence: describe(
+        path.map((node) => ({ text: store.texts[node] ?? '', tag: firstTag(store.tags[node] ?? '') })),
+      ),
       children: store.children(id).length,
       hidden: store.nodeCount[id] ?? 0,
       chunk: store.chunks[id],

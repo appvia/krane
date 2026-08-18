@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import type { SentencePart } from '@/features/tree/sentence'
+
 defineProps<{
   details: {
     text: string
     branch: string
     tags: string
     path: string[]
+    sentence: SentencePart[]
     children: number
     hidden: number
     chunk: string | null | undefined
@@ -32,15 +35,23 @@ defineProps<{
         {{ details.text }}
       </h2>
 
+      <!--
+        The path read back as a sentence. Each level of the tree carries the word
+        that joins it to the next, so a leaf states who is granted what.
+      -->
+      <p
+        v-if="details.sentence.length"
+        class="mt-4 rounded-md bg-surface-2 p-3 text-sm leading-relaxed"
+      >
+        <span
+          v-for="(part, index) in details.sentence"
+          :key="index"
+          :class="part.subject ? 'font-semibold' : 'text-muted'"
+          class="break-words"
+        >{{ index > 0 ? ' ' : '' }}{{ part.text }}</span>
+      </p>
+
       <dl class="mt-5 space-y-3 text-sm">
-        <div v-if="details.path.length">
-          <dt class="text-muted">
-            Path
-          </dt>
-          <dd class="mt-1 break-words">
-            {{ details.path.join(' › ') }}
-          </dd>
-        </div>
         <div v-if="details.tags">
           <dt class="text-muted">
             Tags
