@@ -37,6 +37,16 @@ const items = computed(() =>
 
 const matched = computed(() => new Set(tree.matches.value.ids))
 
+// A pruned chunk means the report was rewritten since this page loaded, which is
+// a different problem from a branch that failed to load.
+const chunkMessage = computed(() => {
+  const error = tree.chunkError.value
+  if (!error) return null
+  return error.kind === 'missing'
+    ? 'That branch is not in the report any more — it has been regenerated since this page loaded. Reload for the current tree.'
+    : error.message
+})
+
 // Walking matches is pointless if the row stays off screen.
 watch(tree.current, (id) => {
   if (id === null) return
@@ -137,10 +147,10 @@ watch(tree.current, (id) => {
       </p>
 
       <p
-        v-if="tree.chunkError.value"
+        v-if="chunkMessage"
         class="mt-3 text-sm text-danger"
       >
-        {{ tree.chunkError.value.message }}
+        {{ chunkMessage }}
       </p>
     </header>
 

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createRouter, createWebHashHistory } from 'vue-router'
 
 import { flatten } from '@/features/tree/flatten'
+import { AppError } from '@/lib/api'
 import TreeView from '@/features/tree/TreeView.vue'
 import type { TreeLoader } from '@/features/tree/useTree'
 import { resetClusters } from '@/lib/cluster'
@@ -96,6 +97,28 @@ describe('TreeView', () => {
     await wrapper.get('[aria-label="Expand Namespaces"]').trigger('click')
     await vi.waitFor(() => expect(wrapper.text()).toContain('<img src=x onerror="alert(1)">'))
     expect(wrapper.find('img').exists()).toBe(false)
+  })
+
+  it('explains a branch that the report no longer has', async () => {
+    // The report loop prunes chunks its new index does not refer to, so an open
+    // page can be holding an index that points at a file that is gone.
+    const pruned: TreeLoader = (request) =>
+      request.url.endsWith('index.json')
+        ? Promise.resolve(flatten([INDEX], request))
+        : Promise.reject(new AppError('missing', 'gone'))
+
+    const router = createRouter({
+      history: createWebHashHistory(),
+      routes: [{ path: '/tree', component: TreeView }],
+    })
+    await router.push('/tree')
+    const wrapper = mount(TreeView, { props: { loader: pruned }, global: { plugins: [router] } })
+    await vi.waitFor(() => expect(wrapper.text()).not.toContain('Loading the tree'))
+
+    await wrapper.get('[aria-label="Expand Namespaces"]').trigger('click')
+    await wrapper.get('[aria-label="Expand kube-system"]').trigger('click')
+
+    await vi.waitFor(() => expect(wrapper.text()).toContain('regenerated since this page loaded'))
   })
 
   it('highlights matches and counts them', async () => {

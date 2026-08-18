@@ -128,6 +128,12 @@ module Krane
 
         response.status = 200
         response.body = File.open(path, 'rb')
+      rescue SystemCallError
+        # The file existed a moment ago and does not now: a report regenerated
+        # underneath this request and pruned it. That is a 404, not a failure.
+        # Reopening is safe once the handle is held, so only the stat and the
+        # open can lose this race.
+        not_found response
       end
 
       # Maps a request path to a file inside the docroot, or nil if it does not

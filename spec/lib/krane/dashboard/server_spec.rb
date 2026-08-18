@@ -66,6 +66,27 @@ describe Krane::Dashboard::Server do
       expect(response['content-type']).to eq 'application/json; charset=utf-8'
     end
 
+    it 'returns 404 when a report regenerates the file out from under the request' do
+      # The report loop prunes chunks the new index no longer refers to, so a
+      # file can pass the existence check and be gone by the time it is read.
+      # Verified live against a container: this used to be a 500.
+      allow(File).to receive(:stat).and_call_original
+      allow(File).to receive(:stat)
+        .with(File.join(@root, 'data', 'default', 'rbac-findings.json'))
+        .and_raise(Errno::ENOENT)
+
+      expect(get('/data/default/rbac-findings.json').code).to eq '404'
+    end
+
+    it 'returns 404 when the file disappears between the stat and the open' do
+      allow(File).to receive(:open).and_call_original
+      allow(File).to receive(:open)
+        .with(File.join(@root, 'data', 'default', 'rbac-findings.json'), 'rb')
+        .and_raise(Errno::ENOENT)
+
+      expect(get('/data/default/rbac-findings.json').code).to eq '404'
+    end
+
   end
 
   describe 'security headers' do
