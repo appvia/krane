@@ -82,3 +82,23 @@ export type TreeSearchIndex = {
   chunks: string[]
   terms: Record<string, number[]>
 }
+
+/** rbac-network.json, as vis-network wants it: nodes plus undirected edges. */
+export type NetworkNode = {
+  id: string
+  label: string
+  /** Kind plus flag boosts; see kindOf(). */
+  group: number
+  value: number
+  title: string
+}
+
+export type NetworkEdge = {
+  from: string
+  to: string
+}
+
+export type NetworkData = {
+  network_nodes: NetworkNode[]
+  network_edges: NetworkEdge[]
+}
