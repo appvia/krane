@@ -15,6 +15,19 @@ export function kindOf(group: number): NodeKind {
   return NODE_KINDS[group % 10] ?? 'Rule'
 }
 
+/**
+ * One definition of a kind's colour, for both places it is drawn: the canvas
+ * reads the token, the legend needs a class Tailwind can see. Splitting them
+ * would let the key drift from the dots it explains.
+ */
+export const KIND_STYLE: Record<NodeKind, { token: string; fallback: string; swatch: string }> = {
+  Namespace: { token: '--krane-accent', fallback: '#4f46e5', swatch: 'bg-accent' },
+  Rule: { token: '--krane-sev-warning', fallback: '#f79009', swatch: 'bg-warning' },
+  Role: { token: '--krane-sev-info', fallback: '#2e90fa', swatch: 'bg-info' },
+  Subject: { token: '--krane-sev-success', fallback: '#12b76a', swatch: 'bg-success' },
+  'Pod security policy': { token: '--krane-sev-danger', fallback: '#d92d20', swatch: 'bg-danger' },
+}
+
 export type Adjacency = Map<string, Set<string>>
 
 export function adjacency(nodes: readonly NetworkNode[], edges: readonly NetworkEdge[]): Adjacency {

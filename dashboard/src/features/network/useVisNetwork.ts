@@ -8,7 +8,7 @@
 import { DataSet } from 'vis-data'
 import { computed, onScopeDispose, ref, watch, type Ref } from 'vue'
 
-import { adjacency, kindOf, neighbourhood, orphans, tooltip } from '@/features/network/graph'
+import { KIND_STYLE, NODE_KINDS, adjacency, kindOf, neighbourhood, orphans, tooltip } from '@/features/network/graph'
 import type { NetworkData, NetworkNode } from '@/lib/types'
 
 const FIT_THROTTLE_MS = 200
@@ -44,13 +44,9 @@ function palette(): Palette {
   const token = (name: string, fallback: string) => styles.getPropertyValue(name).trim() || fallback
 
   return {
-    kinds: {
-      Namespace: token('--krane-accent', '#4f46e5'),
-      Rule: token('--krane-sev-warning', '#f79009'),
-      Role: token('--krane-sev-info', '#2e90fa'),
-      Subject: token('--krane-sev-success', '#12b76a'),
-      'Pod security policy': token('--krane-sev-danger', '#d92d20'),
-    },
+    kinds: Object.fromEntries(
+      NODE_KINDS.map((kind) => [kind, token(KIND_STYLE[kind].token, KIND_STYLE[kind].fallback)]),
+    ),
     edge: token('--krane-border', '#e2e8f0'),
     border: token('--krane-surface', '#ffffff'),
     font: token('--krane-text', '#0f172a'),
@@ -107,6 +103,25 @@ export function useVisNetwork(
     return [...(links.value.get(focus.value) ?? [])]
       .map((id) => byId.value.get(id))
       .filter((node): node is NetworkNode => node !== undefined)
+  })
+
+  /** The kinds actually on screen, with how many of each: the key to the dots. */
+  const legend = computed(() => {
+    const counted = new Map<string, number>()
+    for (const id of visible.value) {
+      const node = byId.value.get(id)
+      if (node) {
+        const kind = kindOf(node.group)
+        counted.set(kind, (counted.get(kind) ?? 0) + 1)
+      }
+    }
+
+    // In the published order, so the key does not reshuffle as you navigate.
+    return NODE_KINDS.filter((kind) => counted.has(kind)).map((kind) => ({
+      kind,
+      count: counted.get(kind) ?? 0,
+      swatch: KIND_STYLE[kind].swatch,
+    }))
   })
 
   const unconnected = computed(() =>
@@ -215,8 +230,12 @@ export function useVisNetwork(
     neighbours,
     unconnected,
     nodes,
+    legend,
     drawn: computed(() => visible.value.size),
-    orphanCount: computed(() => orphaned.value.size),
+    // Counted within what is drawn, like everything else in the header. An
+    // unconnected node only appears in a neighbourhood when it is the one in
+    // focus, which is exactly when saying so is worth something.
+    orphanCount: computed(() => [...visible.value].filter((id) => orphaned.value.has(id)).length),
     /** Re-reads the theme tokens and redraws. */
     retheme: build,
     fit: () => network?.fit(),

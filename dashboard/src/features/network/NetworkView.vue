@@ -162,13 +162,38 @@ const shown = computed(() => {
         </div>
       </div>
 
-      <p class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
+      <p
+        class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted"
+        aria-label="What is on screen"
+      >
         <span class="tabular-nums">{{ shown }}</span>
         <span class="tabular-nums">{{ counts.edges.toLocaleString() }} connections</span>
+        <!-- What the dots mean, for the kinds actually on screen. -->
+        <span
+          v-for="entry in graph.legend.value"
+          :key="entry.kind"
+          class="inline-flex items-center gap-1.5"
+        >
+          <span
+            class="size-2 shrink-0 rounded-full"
+            :class="entry.swatch"
+            aria-hidden="true"
+          />
+          {{ entry.kind }}
+          <span class="tabular-nums">{{ entry.count.toLocaleString() }}</span>
+        </span>
+
         <span
           v-if="graph.orphanCount.value"
-          class="tabular-nums text-warning-fg"
-        >{{ graph.orphanCount.value }} unconnected</span>
+          class="inline-flex items-center gap-1.5 text-warning-fg"
+        >
+          <span
+            class="size-2 shrink-0 rounded-full border-2 border-warning"
+            aria-hidden="true"
+          />
+          unconnected
+          <span class="tabular-nums">{{ graph.orphanCount.value.toLocaleString() }}</span>
+        </span>
       </p>
     </header>
 

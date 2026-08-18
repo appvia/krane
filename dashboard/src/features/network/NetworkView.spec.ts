@@ -148,6 +148,29 @@ describe('NetworkView', () => {
     expect(wrapper.text()).toContain('Directly connected to 2')
   })
 
+  it('keys the dots to the kinds actually on screen', async () => {
+    const { wrapper, vis } = await mountView()
+    const key = () => wrapper.get('[aria-label="What is on screen"]').text()
+
+    // The whole graph: one namespace, two roles, one subject.
+    expect(key()).toContain('Namespace 1')
+    expect(key()).toContain('Role 2')
+    expect(key()).toContain('Subject 1')
+    // Kinds this cluster has none of are not explained.
+    expect(key()).not.toContain('Pod security policy')
+    expect(key()).toContain('unconnected 1')
+
+    // Focusing the connected role drops the unconnected one from the key.
+    vis.emit('click', { nodes: ['3'] })
+    await vi.waitFor(() => expect(key()).toContain('Role 1'))
+    expect(key()).not.toContain('unconnected')
+
+    // One hop from that role reaches the subject but not the namespace beyond it.
+    await wrapper.get('select').setValue('1')
+    await vi.waitFor(() => expect(key()).not.toContain('Namespace'))
+    expect(key()).toContain('Subject 1')
+  })
+
   it('lists what nothing is bound to while nothing is selected', async () => {
     const { wrapper } = await mountView()
 
