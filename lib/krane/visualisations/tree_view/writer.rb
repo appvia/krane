@@ -43,6 +43,15 @@ module Krane
         # reads once the user expands them.
         INDEX_DEPTH = 2
 
+        # A chunk over this size is split again, heaviest branch first, so that
+        # expanding one node fetches something a browser can parse without
+        # stalling. Splitting at level 2 alone is not enough: on a real cluster a
+        # single facet can hold tens of megabytes.
+        MAX_CHUNK_BYTES = 256 * 1024
+
+        # `{"nodes":[` and `]}` around the entries, and a comma between each.
+        CHUNK_OVERHEAD = 12
+
         def initialize cluster:, tree:, root: nil
           @cluster = cluster
           @tree    = tree
@@ -81,7 +90,7 @@ module Krane
         # children written out to a chunk and replaced by a reference to it.
         def index_node node, depth, facet
           facet = node[:facet] if node[:facet].present?
-          index_term node[:text], 0
+          index_term node[:text], [0]
 
           children = node[:nodes]
           return node.except(:nodes) if children.blank?
@@ -89,35 +98,86 @@ module Krane
           if depth < INDEX_DEPTH
             node.merge(nodes: children.map { |child| index_node(child, depth + 1, facet) })
           else
-            node.except(:nodes).merge(write_chunk(node, children, facet))
+            node.except(:nodes).merge(write_chunk(children, facet: facet, name: node[:text], ancestors: []))
           end
         end
 
-        # Writes `children` to their own file and returns the reference the
-        # index node stands in for them with.
-        def write_chunk node, children, facet
-          path = chunk_path(facet, node[:text])
+        # Writes `children` to their own file and returns the reference that
+        # stands in for them. `ancestors` are the chunks a reader passes through
+        # to get here, which is what lets search name an unopened branch.
+        def write_chunk children, facet:, name:, ancestors:
+          path = chunk_path(facet, name)
           @chunks << path
-          chunk_index = @chunks.size - 1
+          chain = ancestors + [@chunks.size - 1]
 
-          node_count = children.sum { |child| index_subtree(child, chunk_index) }
+          # Counted from the originals: node_count is the size of the whole
+          # subtree, however many files it ends up spread across.
+          node_count = children.sum { |child| count_nodes(child) }
 
-          write_json path, { nodes: children }
+          contents = pack(children, facet: facet, chain: chain)
+          index_inline contents, chain
+          write_json path, { nodes: contents }
 
           { chunk: path, node_count: node_count }
         end
 
-        # Records every text in the subtree against the chunk holding it, and
-        # returns how many nodes that subtree contains.
-        def index_subtree node, chunk_index
-          index_term node[:text], chunk_index
-          1 + (node[:nodes] || []).sum { |child| index_subtree(child, chunk_index) }
+        # Hands the heaviest branch its own chunk, over and over, until what is
+        # left fits. Returns children with some of them replaced by references;
+        # the originals are left alone.
+        def pack children, facet:, chain:
+          contents = children.dup
+          weights  = contents.map { |child| weigh(child) }
+
+          while (position = heaviest_splittable(contents, weights))
+            child     = contents[position]
+            reference = write_chunk(child[:nodes], facet: facet, name: child[:text], ancestors: chain)
+
+            contents[position] = child.except(:nodes).merge(reference)
+            weights[position]  = weigh(contents[position])
+          end
+
+          contents
         end
 
-        def index_term text, chunk_index
+        # Which child to spin out next, or nil when the chunk fits — or when
+        # nothing is left to split. A node whose children are all leaves cannot
+        # be divided any further, so an oversized chunk is preferred to a lie.
+        def heaviest_splittable contents, weights
+          return nil if chunk_size(weights) <= MAX_CHUNK_BYTES
+
+          contents.each_index
+                  .select { |position| contents[position][:nodes].present? }
+                  .max_by { |position| weights[position] }
+        end
+
+        # Bytes this node takes up in a chunk file.
+        def weigh node
+          node.to_json.bytesize
+        end
+
+        # Bytes the chunk file will be, from the weights of what is in it.
+        def chunk_size weights
+          weights.sum + CHUNK_OVERHEAD + [weights.size - 1, 0].max
+        end
+
+        def count_nodes node
+          1 + (node[:nodes] || []).sum { |child| count_nodes(child) }
+        end
+
+        # Records every text held in this chunk against it and against the
+        # chunks leading to it, so a match can be traced back to a branch the
+        # reader has not opened yet.
+        def index_inline nodes, chain
+          nodes.each do |node|
+            index_term node[:text], chain
+            index_inline node[:nodes], chain if node[:nodes].present?
+          end
+        end
+
+        def index_term text, chunk_indices
           return if text.blank?
-          chunks = @terms[text.to_s.downcase]
-          chunks << chunk_index unless chunks.include?(chunk_index)
+          known = @terms[text.to_s.downcase]
+          chunk_indices.each { |chunk_index| known << chunk_index unless known.include?(chunk_index) }
         end
 
         def chunk_path facet, text

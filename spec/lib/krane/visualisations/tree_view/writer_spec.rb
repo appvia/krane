@@ -52,6 +52,43 @@ describe Krane::Visualisations::TreeView::Writer do
         .map { |p| p.sub("#{@root}/", '') }.sort
   end
 
+  # Every chunk reference anywhere in the published tree, index or chunk alike.
+  def chunk_references
+    found = []
+    visit = lambda do |node|
+      found << node['chunk'] if node['chunk']
+      (node['nodes'] || []).each { |child| visit.call child }
+    end
+
+    visit.call read_json('index.json')
+    found.each { |path| (read_json(path)['nodes'] || []).each { |node| visit.call node } }
+    found
+  end
+
+  # A facet whose nodes are big enough to be worth splitting: `branches` branches
+  # of `leaves` leaves each.
+  def wide_facet branches: 4, leaves: 6
+    [
+      {
+        facet: :resources,
+        text: 'Resource Access',
+        nodes: [
+          {
+            branch: :RESOURCE, text: 'resource', tags: ['Resource'], navigable: true,
+            nodes: (1..branches).map do |branch|
+              {
+                branch: :RESOURCE, text: "apigroup-#{branch}", tags: ['ApiGroup'], navigable: true,
+                nodes: (1..leaves).map do |leaf|
+                  { branch: :RESOURCE, text: "verb-#{branch}-#{leaf}", tags: ['Verb'], navigable: false }
+                end
+              }
+            end
+          }
+        ]
+      }
+    ]
+  end
+
   describe '#write' do
 
     describe 'layout' do
@@ -184,6 +221,101 @@ describe Krane::Visualisations::TreeView::Writer do
         read_json('search.json')['terms'].each_value do |chunks|
           expect(chunks).to eq chunks.uniq
         end
+      end
+
+    end
+
+    describe 'splitting a chunk that is too big' do
+
+      # Small enough that the fixture below crosses it, so the spec does not have
+      # to build a quarter of a megabyte of nodes to exercise the split.
+      before(:each) { stub_const "#{described_class}::MAX_CHUNK_BYTES", 400 }
+
+      it 'gives the heaviest branch its own chunk until the chunk fits' do
+        write tree(with_facets: wide_facet)
+
+        chunks = files_written - ['index.json', 'manifest.json', 'search.json']
+        expect(chunks.size).to be > 1
+
+        chunks.each do |chunk|
+          next if read_json(chunk)['nodes'].none? { |node| node['nodes'] } # nothing left to split
+          expect(File.size(File.join(@root, chunk))).to be <= described_class::MAX_CHUNK_BYTES
+        end
+      end
+
+      it 'cannot shrink a chunk below the references it has to hold' do
+        # Splitting replaces a child's children with a reference, so a node with
+        # very many children ends up as a file of nothing but references. Going
+        # further would mean inventing grouping nodes the cluster does not have.
+        write tree(with_facets: wide_facet(branches: 8, leaves: 2))
+
+        nodes = read_json('resources/resource.json')['nodes']
+        expect(nodes.size).to eq 8
+        expect(nodes).to all(include('chunk'))
+        expect(nodes).to all(satisfy { |node| !node.key?('nodes') })
+      end
+
+      it 'references the new chunks from inside the chunk that shed them' do
+        write tree(with_facets: wide_facet)
+
+        shed = read_json('resources/resource.json')['nodes'].select { |node| node['chunk'] }
+        expect(shed).not_to be_empty
+
+        shed.each do |node|
+          # The contract holds at any depth: children inline, or a chunk, never both.
+          expect(node).not_to have_key 'nodes'
+          expect(read_json(node['chunk'])['nodes'].map { |child| child['text'] })
+            .to all(match(/\Averb-/))
+        end
+      end
+
+      it 'still reports the size of the whole subtree, however many files it took' do
+        write tree(with_facets: wide_facet(branches: 4, leaves: 6))
+
+        resource = read_json('index.json')['nodes'][0]['nodes'][0]
+        # Four api groups and their six verbs each.
+        expect(resource['node_count']).to eq 4 + (4 * 6)
+      end
+
+      it 'resolves every chunk reference, at any depth' do
+        write tree(with_facets: wide_facet)
+
+        references = chunk_references
+        expect(references.size).to be > 1
+        references.each { |path| expect(File.exist?(File.join(@root, path))).to be true }
+      end
+
+      it 'points search at the chunk holding a match and at the chunks leading to it' do
+        write tree(with_facets: wide_facet)
+
+        search = read_json('search.json')
+        holder = search['chunks'].index('resources/apigroup-1.json')
+        parent = search['chunks'].index('resources/resource.json')
+
+        expect(holder).not_to be_nil
+        # A reader that has opened nothing needs to know which branch to open
+        # first, so a deep match names its whole chain.
+        expect(search['terms']['verb-1-1']).to include holder, parent
+      end
+
+      it 'accepts an oversized chunk rather than splitting what cannot be split' do
+        leaves = (1..40).map { |leaf| { branch: :RESOURCE, text: "verb-#{leaf}", tags: ['Verb'], navigable: false } }
+        facet  = [{ facet: :resources, text: 'Resource Access',
+                    nodes: [{ branch: :RESOURCE, text: 'resource', tags: ['Resource'], nodes: leaves }] }]
+
+        write tree(with_facets: facet)
+
+        expect(File.size(File.join(@root, 'resources/resource.json'))).to be > described_class::MAX_CHUNK_BYTES
+        expect(read_json('resources/resource.json')['nodes'].size).to eq 40
+      end
+
+      it 'drops sub chunks a later run no longer needs' do
+        write tree(with_facets: wide_facet)
+        expect(files_written).to include 'resources/apigroup-1.json'
+
+        write tree
+        expect(files_written).not_to include 'resources/apigroup-1.json'
+        expect(files_written).not_to include 'resources/resource.json'
       end
 
     end

@@ -263,11 +263,32 @@ export function useTree(loader?: TreeLoader) {
     bumpView()
   }
 
-  /** Loads the unopened branches the search index says contain matches. */
+  /**
+   * Loads the unopened branches the search index says contain matches.
+   *
+   * A chunk can hold references to further chunks, and the node that owns one of
+   * those only exists once its parent has been grafted — so this goes round
+   * again until nothing new can be reached. The search index lists a match
+   * against every chunk on the way to it, which is what makes each pass find
+   * the next one.
+   */
   async function searchEverywhere(): Promise<void> {
-    for (const chunk of unsearched.value) {
-      const owner = store.chunks.indexOf(chunk)
-      if (owner !== -1) await fetchChunk(owner, chunk)
+    // Tried, not loaded: a chunk that fails to load stays unsearched, and must
+    // not be picked up again on the next pass.
+    const attempted = new Set<string>()
+
+    for (;;) {
+      const reachable = unsearched.value
+        .filter((chunk) => !attempted.has(chunk))
+        .map((chunk) => ({ chunk, owner: store.chunks.indexOf(chunk) }))
+        .filter((candidate) => candidate.owner !== -1)
+
+      if (reachable.length === 0) return
+
+      for (const { chunk, owner } of reachable) {
+        attempted.add(chunk)
+        await fetchChunk(owner, chunk)
+      }
     }
   }
 

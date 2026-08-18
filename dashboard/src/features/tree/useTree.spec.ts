@@ -24,20 +24,40 @@ const INDEX: RbacTreeNode = {
       text: 'Actors',
       nodes: [{ text: 'ServiceAccount', chunk: 'subjects/serviceaccount.json', node_count: 1 }],
     },
+    {
+      text: 'Resource Access',
+      nodes: [{ text: 'resource', chunk: 'resources/resource.json', node_count: 4 }],
+    },
   ],
 }
 
 const CHUNKS: Record<string, RbacTreeNode[]> = {
   'namespaces/kube-system.json': [{ text: 'default-sa', nodes: [{ text: 'secrets get' }] }, { text: 'other-sa' }],
   'subjects/serviceaccount.json': [{ text: 'hidden-actor' }],
+  // A chunk too big to hand over in one file: its heaviest branch was written to
+  // a chunk of its own, which is only reachable once this one is loaded.
+  'resources/resource.json': [
+    { text: 'configmaps', chunk: 'resources/configmaps.json', node_count: 2 },
+    { text: 'endpoints' },
+  ],
+  'resources/configmaps.json': [{ text: 'get' }, { text: 'watch-buried-verb' }],
 }
 
 const SEARCH: TreeSearchIndex = {
-  chunks: ['index.json', 'namespaces/kube-system.json', 'subjects/serviceaccount.json'],
+  chunks: [
+    'index.json',
+    'namespaces/kube-system.json',
+    'subjects/serviceaccount.json',
+    'resources/resource.json',
+    'resources/configmaps.json',
+  ],
   terms: {
     'kube-system': [0],
     'default-sa': [1],
     'hidden-actor': [2],
+    // A term inside a nested chunk is listed against the chunks leading to it,
+    // which is what lets search reach it without opening anything by hand.
+    'watch-buried-verb': [4, 3],
   },
 }
 
@@ -107,10 +127,10 @@ describe('useTree', () => {
     const { load, calls } = loader()
     const { tree } = await mountTree(load)
 
-    expect(texts(tree)).toEqual(['default cluster', 'Namespaces', 'Actors'])
+    expect(texts(tree)).toEqual(['default cluster', 'Namespaces', 'Actors', 'Resource Access'])
     expect(calls).toHaveLength(1)
     expect(calls[0]).toContain('data/default/tree/index.json')
-    expect(tree.loadedNodes.value).toBe(6)
+    expect(tree.loadedNodes.value).toBe(8)
   })
 
   it('expands an inlined branch without fetching anything', async () => {
@@ -119,7 +139,14 @@ describe('useTree', () => {
     const { tree } = await mountTree(load)
 
     await tree.toggle(1) // Namespaces
-    expect(texts(tree)).toEqual(['default cluster', 'Namespaces', 'kube-system', 'kube-public', 'Actors'])
+    expect(texts(tree)).toEqual([
+      'default cluster',
+      'Namespaces',
+      'kube-system',
+      'kube-public',
+      'Actors',
+      'Resource Access',
+    ])
     expect(calls).toHaveLength(1)
   })
 
@@ -134,7 +161,7 @@ describe('useTree', () => {
     expect(calls).toHaveLength(2)
     expect(calls[1]).toContain('data/default/tree/namespaces/kube-system.json')
     expect(texts(tree)).toContain('default-sa')
-    expect(tree.loadedNodes.value).toBe(9)
+    expect(tree.loadedNodes.value).toBe(11)
 
     await tree.toggle(2) // collapse
     await tree.toggle(2) // expand again
@@ -180,6 +207,47 @@ describe('useTree', () => {
     await vi.waitFor(() => expect(tree.matches.value.total).toBe(1))
     expect(tree.unsearched.value).toEqual([])
     expect(texts(tree)).toContain('hidden-actor')
+  })
+
+  it('follows a chunk that points at another chunk', async () => {
+    stubFetch()
+    const { load, calls } = loader()
+    const { tree } = await mountTree(load)
+
+    const row = (text: string) => tree.rows.value.find((candidate) => candidate.text === text)!
+
+    await tree.toggle(row('Resource Access').id)
+    await tree.toggle(row('resource').id)
+
+    expect(texts(tree)).toContain('configmaps')
+    expect(calls.at(-1)).toContain('resources/resource.json')
+
+    // configmaps arrived holding a reference rather than its children.
+    expect(row('configmaps').expandable).toBe(true)
+    expect(row('configmaps').hidden).toBe(2)
+
+    await tree.toggle(row('configmaps').id)
+    expect(calls.at(-1)).toContain('resources/configmaps.json')
+    expect(texts(tree)).toContain('watch-buried-verb')
+  })
+
+  it('reaches a match nested two chunks deep, a pass at a time', async () => {
+    stubFetch()
+    const { load } = loader()
+    const { tree } = await mountTree(load)
+
+    tree.query.value = 'watch-buried-verb'
+    // Both the chunk holding the match and the one leading to it are unopened.
+    await vi.waitFor(() => expect(tree.unsearched.value).toHaveLength(2))
+    expect(tree.matches.value.total).toBe(0)
+
+    // The nested chunk's owner does not exist yet, so one call has to load the
+    // outer chunk and come back for the inner one.
+    await tree.searchEverywhere()
+
+    await vi.waitFor(() => expect(tree.matches.value.total).toBe(1))
+    expect(tree.unsearched.value).toEqual([])
+    expect(texts(tree)).toContain('watch-buried-verb')
   })
 
   it('describes the selected node', async () => {
