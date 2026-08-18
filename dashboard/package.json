@@ -2,10 +2,6 @@
     "title": "Kubernetes RBAC Inspector",
     "name": "kubernetes-rbac-inspector",
     "version": "1.0.0",
-    "scripts": {
-        "start": "node_modules/.bin/gulp clean && node_modules/.bin/gulp watch",
-        "preinstall": "npx npm-force-resolutions"
-    },
     "description": "Kubernetes RBAC security risk inspector",
     "homepage": "https://github.com/appvia/krane",
     "author": "Appvia.io",
@@ -19,48 +15,44 @@
     },
     "type": "module",
     "engines": {
-        "node": "^14.17.6"
+        "node": ">=20.19"
+    },
+    "scripts": {
+        "dev": "vite",
+        "build": "npm run clean && vite build",
+        "clean": "node scripts/clean.mjs",
+        "preview": "vite preview",
+        "lint": "eslint .",
+        "typecheck": "vue-tsc --noEmit",
+        "test": "vitest run"
     },
     "dependencies": {
-        "@babel/core": "7.26.0",
-        "@babel/preset-env": "7.26.0",
-        "@egjs/hammerjs": "^2.0.0",
-        "@fortawesome/fontawesome-free": "6.6.0",
-        "@popperjs/core": "^2.11.8",
-        "bootstrap": "^5.3.3",
-        "chart.js": "3.5.1",
-        "del": "8.0.0",
-        "express": "^4.21.2",
-        "gulp": "5.0.0",
-        "gulp-babel": "8.0.0",
-        "gulp-clean-css": "4.3.0",
-        "gulp-exec": "5.0.0",
-        "gulp-plumber": "^1.2.1",
-        "gulp-rename": "2.0.0",
-        "gulp-sass": "^5.0.0",
-        "gulp-uglify": "3.0.2",
-        "jquery": "^3.6.0",
-        "jquery.easing": "^1.4.1",
-        "keycharm": "^0.4.0",
-        "lodash": "^4.17.21",
-        "patternfly-bootstrap-treeview": "2.1.10",
-        "prismjs": "^1.27.0",
-        "sass": "1.80.6",
-        "stickyfilljs": "2.1.0",
-        "timsort": "^0.3.0",
-        "uuid": "^8.0.0",
-        "vis-data": "^7.1.2",
-        "vis-network": "9.1.0",
-        "vis-util": "^5.0.2",
-        "vue": "^3.5.12",
-        "vue-popperjs": "2.3.0"
-    },
-    "overrides": {
-        "patternfly-bootstrap-treeview": {
-            "bootstrap": "^5.3.3"
-        }
+        "@fontsource-variable/inter": "^5.3.0",
+        "@tanstack/vue-virtual": "^3.13.35",
+        "lucide-vue-next": "^1.0.0",
+        "reka-ui": "^2.10.3",
+        "vis-data": "^8.0.5",
+        "vis-network": "^10.1.1",
+        "vue": "^3.5.41",
+        "vue-router": "^5.2.0",
+        "yaml": "^2.9.0"
     },
     "devDependencies": {
-        "nodemon": "^3.1.9"
+        "@eslint/js": "^10.0.1",
+        "@tailwindcss/vite": "^4.3.3",
+        "@vitejs/plugin-vue": "^6.0.8",
+        "@vue/test-utils": "^2.4.11",
+        "eslint": "^10.8.1",
+        "eslint-plugin-vue": "^10.10.0",
+        "globals": "^17.11.0",
+        "happy-dom": "^20.11.2",
+        "prettier": "^3.9.6",
+        "sirv": "^3.0.2",
+        "tailwindcss": "^4.3.3",
+        "typescript": "^6.0.3",
+        "typescript-eslint": "^8.67.0",
+        "vite": "^8.2.1",
+        "vitest": "^4.1.10",
+        "vue-tsc": "^3.3.10"
     }
 }

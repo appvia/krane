@@ -1,0 +1,62 @@
+/*
+ * Severity is the dashboard's primary signal, so it gets first class tokens:
+ * every badge, donut segment, tree marker and network group reads the same four
+ * ramps. Each ramp carries a solid (for fills and marks), a foreground and a
+ * background, paired so the fg/bg combination clears WCAG AA in both themes.
+ */
+
+:root {
+  --krane-bg: #f8fafc;
+  --krane-surface: #ffffff;
+  --krane-surface-2: #f1f5f9;
+  --krane-border: #e2e8f0;
+  --krane-text: #0f172a;
+  --krane-muted: #64748b;
+  --krane-accent: #4f46e5;
+  --krane-accent-fg: #ffffff;
+  --krane-ring: #6366f1;
+
+  --krane-sev-danger: #d92d20;
+  --krane-sev-danger-fg: #b42318;
+  --krane-sev-danger-bg: #fef3f2;
+
+  --krane-sev-warning: #f79009;
+  --krane-sev-warning-fg: #b54708;
+  --krane-sev-warning-bg: #fffaeb;
+
+  --krane-sev-info: #2e90fa;
+  --krane-sev-info-fg: #175cd3;
+  --krane-sev-info-bg: #eff8ff;
+
+  --krane-sev-success: #12b76a;
+  --krane-sev-success-fg: #027a48;
+  --krane-sev-success-bg: #ecfdf3;
+}
+
+[data-theme='dark'] {
+  --krane-bg: #020617;
+  --krane-surface: #0f172a;
+  --krane-surface-2: #1e293b;
+  --krane-border: #1e293b;
+  --krane-text: #e2e8f0;
+  --krane-muted: #94a3b8;
+  --krane-accent: #6366f1;
+  --krane-accent-fg: #ffffff;
+  --krane-ring: #818cf8;
+
+  --krane-sev-danger: #f04438;
+  --krane-sev-danger-fg: #fda29b;
+  --krane-sev-danger-bg: #55160c;
+
+  --krane-sev-warning: #f79009;
+  --krane-sev-warning-fg: #fec84b;
+  --krane-sev-warning-bg: #4e1d09;
+
+  --krane-sev-info: #2e90fa;
+  --krane-sev-info-fg: #84caff;
+  --krane-sev-info-bg: #102a56;
+
+  --krane-sev-success: #12b76a;
+  --krane-sev-success-fg: #6ce9a6;
+  --krane-sev-success-bg: #053321;
+}
