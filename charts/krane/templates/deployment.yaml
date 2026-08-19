@@ -12,32 +12,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# RedisGraph
+# FalkorDB
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redisgraph
+  name: falkordb
   labels:
     {{- include "krane.labels" . | nindent 4 }}
-    {{- include "krane.redisgraphSelectorLabels" . | nindent 4 }}
+    {{- include "krane.falkordbSelectorLabels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "krane.redisgraphSelectorLabels" . | nindent 6 }}
+      {{- include "krane.falkordbSelectorLabels" . | nindent 6 }}
   strategy: {}
   template:
     metadata:
       labels:
-        {{- include "krane.redisgraphSelectorLabels" . | nindent 8 }}
+        {{- include "krane.falkordbSelectorLabels" . | nindent 8 }}
     spec:
       containers:
-      - image: "{{ .Values.redisgraph.image }}:{{ .Values.redisgraph.tag }}"
+      - image: "{{ .Values.falkordb.image }}:{{ .Values.falkordb.tag }}"
         imagePullPolicy: "IfNotPresent"
-        name: redisgraph
+        name: falkordb
         ports:
         - containerPort: 6379
+        env:
+        - name: FALKORDB_ARGS
+          value: "{{ .Values.falkordb.args }}"
+        - name: BROWSER
+          value: "{{ .Values.falkordb.browser }}"
         resources:
           limits:
             cpu: 1
@@ -100,8 +105,8 @@ spec:
             value: "{{ .Values.params.reportInterval }}"
           - name: KRANE_REPORT_OUTPUT
             value: "{{ .Values.params.reportOutput }}"
-          - name: REDIS_GRAPH_HOST
-            value: "{{ .Values.params.redisGraphHost }}"
+          - name: FALKORDB_HOST
+            value: "{{ .Values.params.falkorDBHost }}"
           - name: SLACK_WEBHOOK_URL
             value: "{{ .Values.params.slackWebhookURL }}"
           - name: SLACK_CHANNEL

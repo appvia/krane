@@ -62,7 +62,7 @@ module Krane
           record = if r.is_a?(Hash)
             r
           else 
-            # redisgraph-rb doesn't return hash records so making one up
+            # The graph client doesn't return hash records so making one up
             columns.zip(r).to_h.with_indifferent_access
           end
 

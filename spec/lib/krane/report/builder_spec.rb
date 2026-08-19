@@ -7,8 +7,8 @@ RSpec.describe Krane::Report::Builder do
     subject { described_class.new(options) }
 
     before do
-      # don't instantiate RedisGraph client
-      allow(Krane::Clients::RedisGraph).to receive(:client).with(anything) { double }
+      # don't instantiate FalkorDB client
+      allow(Krane::Clients::FalkorDB).to receive(:client).with(anything) { double }
       # don't process any risk rule - return empty set
       allow(Krane::Report::RiskRule::Resolver).to receive(:new).with(
         cluster:   cluster, 

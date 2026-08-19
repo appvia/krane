@@ -3,9 +3,9 @@
 : ${KRANE_REPORT_INTERVAL:=300}
 : ${KRANE_REPORT_OUTPUT:=none}
 
-echo "Verify RedisGraph is UP..."
-while [[ "$((printf "PING\r\n";) | nc redisgraph 6379 -w 2 | awk '{$1=$1};1')" != "+PONG" ]];
-  do echo "* Waiting for redisgraph to become available" && sleep 2;
+echo "Verify FalkorDB is UP..."
+while [[ "$((printf "PING\r\n";) | nc falkordb 6379 -w 2 | awk '{$1=$1};1')" != "+PONG" ]];
+  do echo "* Waiting for falkordb to become available" && sleep 2;
 done
 
 echo "Starting report loop..."

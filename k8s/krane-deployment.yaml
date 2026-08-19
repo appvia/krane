@@ -41,8 +41,8 @@ spec:
           value: "30"
         - name: KRANE_REPORT_OUTPUT
           value: none
-        - name: REDIS_GRAPH_HOST
-          value: redisgraph
+        - name: FALKORDB_HOST
+          value: falkordb
         - name: SLACK_WEBHOOK_URL
           value: ""
         - name: SLACK_CHANNEL

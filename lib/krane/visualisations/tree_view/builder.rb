@@ -38,7 +38,7 @@ module Krane
 
         private
 
-        # Deliberately unordered. RedisGraph buffers the whole projection to sort
+        # Deliberately unordered. FalkorDB buffers the whole projection to sort
         # it, and on a mid-sized cluster that sort costs an order of magnitude
         # more memory than the rows themselves - enough to have the graph killed
         # where it runs under a memory limit, which is how it is shipped. Order

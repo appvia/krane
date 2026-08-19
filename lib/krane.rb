@@ -15,7 +15,9 @@
 require 'krane/helpers'
 
 require 'krane/clients/kubernetes'
-require 'krane/clients/redis_graph'
+require 'krane/clients/falkordb'
+require 'krane/clients/falkordb/graph'
+require 'krane/clients/falkordb/query_result'
 
 require 'krane/config/risk'
 require 'krane/config/whitelist'
@@ -46,5 +48,4 @@ require 'krane/dashboard/clusters'
 require 'krane/dashboard/server'
 
 require 'krane/extensions'
-require 'krane/hacks'
 require 'krane/version'

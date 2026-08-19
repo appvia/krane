@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Understands how to retrieve, cache and index RBAC relationships in RedisGraph
+# Understands how to retrieve, cache and index RBAC relationships in FalkorDB
 
 require 'yaml'
 require 'fileutils'
@@ -35,7 +35,7 @@ module Krane
 
         begin
           @graph.delete unless @options.noindex
-        rescue RedisGraph::DeleteError => e
+        rescue Clients::FalkorDB::Graph::DeleteError => e
           banner :info, "#{e.message}. Graph `rbac-#{@cluster}` will be created." unless test?
         end
       end    

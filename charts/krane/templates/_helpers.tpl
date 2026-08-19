@@ -53,12 +53,12 @@ network/krane: "true"
 {{- end }}
 
 {{/*
-RedisGraph Selector labels
+FalkorDB Selector labels
 */}}
-{{- define "krane.redisgraphSelectorLabels" -}}
-app.kubernetes.io/name: redisgraph
+{{- define "krane.falkordbSelectorLabels" -}}
+app.kubernetes.io/name: falkordb
 app.kubernetes.io/instance: {{ .Release.Name }}
-app.kubernetes.io/component: redisgraph
+app.kubernetes.io/component: falkordb
 app.kubernetes.io/part-of: {{ include "krane.name" . }}
 network/krane: "true"
 {{- end }}
