@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    krane (0.1.0)
+    krane (0.1.4)
       activesupport
       colorize
       commander
