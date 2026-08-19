@@ -188,6 +188,16 @@ The server binds to `0.0.0.0` so that it is reachable when running in a cluster.
 
 **The dashboard has no authentication.** It serves everything Krane knows about your cluster's RBAC to anyone who can reach the port, so do not expose it directly. Reach it with `kubectl port-forward`, restrict access with a NetworkPolicy (the chart already labels the pod with `network/krane: "true"`), or put an authenticating proxy in front of it.
 
+The dashboard is a set of static files served from `dashboard/compiled`, and the report writes its data into the same directory. A report generated while the dashboard is running is picked up without a restart.
+
+#### Views
+
+- **Overview** counts the risk rules that matched, by severity.
+- **Findings** lists every matched rule for a chosen severity, with the affected objects and the rule's mitigation notes.
+- **RBAC tree** shows RBAC by namespace, actor, role and resource access. Branches load as they are expanded, so a large cluster does not have to be downloaded before the first row appears. Search covers the loaded branches and reports how many names match in branches that are still closed. Selecting a node reads its path back as a sentence, for example `Namespace kube-system admits Group system:bootstrappers:kubeadm:default-node-token to resource [certificates.k8s.io] certificatesigningrequests action create defined by ClusterRole system:node-bootstrapper`.
+- **RBAC graph** shows what a chosen namespace, actor or role reaches, within one, two or three hops. Pick a node from the search box, by clicking one, or from the tree. With nothing selected it lists the nodes nothing is bound to.
+- **Risk rules** shows the rules the report was evaluated against, as searchable cards and as the raw `rules.yaml`.
+
 ## Architecture
 
 ### RBAC Data indexed in a local Graph database
@@ -347,7 +357,7 @@ Rule can contain any of the following attributes:
   threshold: 2
   writer: |
     if result.namespace_names.count > {{threshold}}
-      "#{result.subject_kind} #{result.subject_name} can access namespaces: #{result.namespace_names.join(', ')}"
+      "#{result.subject_kind} #{name_of(result.subject_name)} can access namespaces: #{namespaces_of(result.namespace_names)}"
     end
   disabled: true
 ```
@@ -355,6 +365,13 @@ Rule can contain any of the following attributes:
 The example above explicitly defines a graph `query` which is used to evaluate RBAC risk, and a `writer` expression used to format query result set. The query simply selects all `Subjects` (excluding whitelisted) and `Namespaces` to which they have access to. Note that the result set will only include `Subjects` having access to more than `2` Namespaces (Noticed `threshold` value there?). Last `writer`'s expression will be captured as formatted result item output.
 
 `writer` can access the result set item via `result` object with methods matching elements returned by the query, e.g. `result.subject_kind`, `result.subject_name` etc.
+
+`writer` can also mark the object names in its output, which the dashboard renders in bold so they can be told apart from the surrounding words:
+
+- `name_of(value)` marks a name.
+- `namespaces_of(value)` marks one or more namespace names, writing the `*` namespace as `* (All NS)` for consistency with the rest of the dashboard.
+
+Marking is optional. Output with nothing marked is displayed as it is.
 
 Note:
 - `{{threshold}}` placeholder in the `writer` expression will be replaced by the rule's `threshold` keyword value.
@@ -563,6 +580,12 @@ $ ./bin/krane --help                    # to get help
 $ ./bin/krane report -k docker-desktop  # to generate your first report for
                                         # local docker-desktop k8s cluster
 ...
+```
+
+The dashboard is served from `dashboard/compiled`, which a fresh clone does not
+have. Build it once before running `krane dashboard`:
+```sh
+$ cd dashboard && npm ci && npm run build
 ```
 
 To work on the Dashboard UI
