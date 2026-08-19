@@ -40,12 +40,20 @@ module Cli
     end
 
     def dashboard options
+      # Finally honours -c: the UI reads the cluster to open from this manifest.
+      Krane::Dashboard::Clusters.set_default options.cluster
+
       say "---".light_cyan
       say "KRANE DASHBOARD:".light_cyan
       say "http://localhost:#{options.port}".light_cyan
       say "---".light_cyan
 
-      %x(port=#{options.port} path=./dashboard/compiled node dashboard/dashboard.js)
+      Krane::Dashboard::Server.new(
+        root:    File.join(Cli::Helpers::APP_ROOT, 'dashboard/compiled'),
+        port:    options.port,
+        bind:    options.bind,
+        verbose: options.verbose
+      ).start
     end
 
   end

@@ -39,7 +39,11 @@ require 'krane/report/builder'
 require 'krane/visualisations/network_view/builder'
 require 'krane/visualisations/tree_view/facet_builder'
 require 'krane/visualisations/tree_view/element'
+require 'krane/visualisations/tree_view/writer'
 require 'krane/visualisations/tree_view/builder'
+
+require 'krane/dashboard/clusters'
+require 'krane/dashboard/server'
 
 require 'krane/extensions'
 require 'krane/hacks'

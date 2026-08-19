@@ -1,0 +1,62 @@
+@import 'tailwindcss';
+/* Self hosted, so the dashboard renders in an air gapped cluster. Each subset
+   carries a unicode-range, so a browser only fetches the one it needs. */
+@import '@fontsource-variable/inter';
+@import './tokens.css';
+
+/*
+ * Theme is an attribute rather than a class so the server-rendered shell can
+ * carry it, and so `dark:` and plain CSS agree on one source of truth.
+ */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/*
+ * `inline` keeps the generated utilities pointing at the custom properties
+ * rather than baking in the light values, so flipping the attribute is enough.
+ */
+@theme inline {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+
+  --color-bg: var(--krane-bg);
+  --color-surface: var(--krane-surface);
+  --color-surface-2: var(--krane-surface-2);
+  --color-border-subtle: var(--krane-border);
+  --color-content: var(--krane-text);
+  --color-muted: var(--krane-muted);
+  --color-accent: var(--krane-accent);
+  --color-accent-fg: var(--krane-accent-fg);
+
+  --color-danger: var(--krane-sev-danger);
+  --color-danger-fg: var(--krane-sev-danger-fg);
+  --color-danger-bg: var(--krane-sev-danger-bg);
+
+  --color-warning: var(--krane-sev-warning);
+  --color-warning-fg: var(--krane-sev-warning-fg);
+  --color-warning-bg: var(--krane-sev-warning-bg);
+
+  --color-info: var(--krane-sev-info);
+  --color-info-fg: var(--krane-sev-info-fg);
+  --color-info-bg: var(--krane-sev-info-bg);
+
+  --color-success: var(--krane-sev-success);
+  --color-success-fg: var(--krane-sev-success-fg);
+  --color-success-bg: var(--krane-sev-success-bg);
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  background-color: var(--krane-bg);
+  color: var(--krane-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--krane-ring);
+  outline-offset: 2px;
+}

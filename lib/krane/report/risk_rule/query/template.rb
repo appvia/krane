@@ -75,7 +75,7 @@ module Krane
                   namespace_name
               ),
               writer: <<-'EOF'
-                "#{result.role_kind} #{result.role_name} in #{result.namespace_name.include?('*') ? '*' : result.namespace_name.join(', ')} namespace(s)"
+                "#{result.role_kind} #{name_of(result.role_name)} in #{namespaces_of(result.namespace_name.include?('*') ? '*' : result.namespace_name)} namespace(s)"
               EOF
             )
           end
@@ -97,7 +97,7 @@ module Krane
                   s.name as subject_name
               ),
               writer: <<-'EOF'
-                "#{result.subject_kind} #{result.subject_name} able to run privileged psp #{result.psp_name}"
+                "#{result.subject_kind} #{name_of(result.subject_name)} able to run privileged psp #{name_of(result.psp_name)}"
               EOF
             )
           end
@@ -124,7 +124,7 @@ module Krane
               ),
               writer: <<-'EOF'
                 txt = result.rule_type == 'resource' ? 'resources' : 'non-resource URLs'
-                "#{result.subject_kind} #{result.subject_name} has * access to * #{txt} (apiGroup: #{result.rule_api_group})"
+                "#{result.subject_kind} #{name_of(result.subject_name)} has * access to * #{txt} (apiGroup: #{result.rule_api_group})"
               EOF
             )
           end
@@ -154,7 +154,7 @@ module Krane
               ),
               writer: <<-'EOF'
                 txt = result.rule_type == 'resource' ? 'resources' : 'non-resource URLs'
-                "#{result.subject_kind} #{result.subject_name} has * access to * #{txt} (apiGroup: #{result.rule_api_group}) in #{result.namespace_name} namespace"
+                "#{result.subject_kind} #{name_of(result.subject_name)} has * access to * #{txt} (apiGroup: #{result.rule_api_group}) in #{namespaces_of(result.namespace_name)} namespace"
               EOF
             )
           end
@@ -180,7 +180,7 @@ module Krane
                   subject_name DESC
               ),
               writer: <<-'EOF'
-                "#{result.subject_kind} #{result.subject_name} (in #{result.namespace_name} namespace)"
+                "#{result.subject_kind} #{name_of(result.subject_name)} (in #{namespaces_of(result.namespace_name)} namespace)"
               EOF
             )
           end
@@ -201,7 +201,7 @@ module Krane
                   subject_name 
               ),
               writer: <<-'EOF'
-                "#{result.subject_kind} #{result.subject_name} is bound to non-existing #{result.role_kind} #{result.role_name}"
+                "#{result.subject_kind} #{name_of(result.subject_name)} is bound to non-existing #{result.role_kind} #{name_of(result.role_name)}"
               EOF
             )
           end
@@ -224,7 +224,7 @@ module Krane
                   subject_name DESC
               ),
               writer: <<-'EOF'
-                "#{result.subject_kind} #{result.subject_name} referenced by #{result.role_count.to_i} roles" if result.role_count.to_i >= {{threshold}}
+                "#{result.subject_kind} #{name_of(result.subject_name)} referenced by #{result.role_count.to_i} roles" if result.role_count.to_i >= {{threshold}}
               EOF
             )
           end
@@ -245,7 +245,7 @@ module Krane
                   namespace_name DESC
               ),
               writer: <<-'EOF'
-                "#{result.namespace_name} allows #{result.subject_count.to_i} subject(s)" if result.subject_count.to_i >= {{threshold}}
+                "#{namespaces_of(result.namespace_name)} allows #{result.subject_count.to_i} subject(s)" if result.subject_count.to_i >= {{threshold}}
               EOF
             )
           end

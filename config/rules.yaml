@@ -9,6 +9,8 @@
 #
 # :query    - RedisGraph query (see README.md). Has precedence over :template. Requires :writer to be defined.
 # :writer   - Writer is a (Ruby) expression used to format :query result set. Writer has precedence over :template.
+#             Object names can be marked with `name_of(value)`, or `namespaces_of(value)` for namespaces, which
+#             the dashboard renders in bold. Marking is optional; unmarked output is displayed as it is.
 # :template - Built-in query/writer template name. If :query & :writer are not specified then chosen 
 #             query generator will be used along with matching writer. See rule attributes below for more information.
 #
@@ -29,6 +31,8 @@ macros:
 # :info            - [Required] Textual information about the check and suggestions on how to mitigate the risk
 # :query           - [Conditonal] RedisGraph query (see README.md). Has precedence over :template. Requires :writer to be defined.
 # :writer          - [Conditonal] Writer is a Ruby expression used to format query result set. Writer has precedence over :template. Required :query to be defined.
+#                    Object names can be marked with `name_of(value)`, or `namespaces_of(value)` for namespaces, which the dashboard
+#                    renders in bold so they stand out from the surrounding words. Marking is optional.
 # :template        - [Conditonal] Built-in query/writer template name. If :query & :writer are not specified then chosen 
 #                    query generator will be used along with matching writer. 
 #                    Some templates require `:match_rules` attribute to be specified on individual rule level in order to build correct query. 
@@ -81,7 +85,7 @@ rules:
   threshold: 2 # threshold used in writer to limit items to those with at least 2 namespaces
   writer: | # Ruby code snippet, last expression will be captured as formatted result item output
     if result.namespace_names.count >= {{threshold}}
-      "#{result.subject_kind} #{result.subject_name} can access namespaces: #{result.namespace_names.join(', ')}"
+      "#{result.subject_kind} #{name_of(result.subject_name)} can access namespaces: #{namespaces_of(result.namespace_names)}"
     end
   disabled: true # This is just an example rule
 #

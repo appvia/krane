@@ -17,6 +17,21 @@
 module Krane
   module Helpers
 
+    # How the `*` namespace is written wherever it is shown. A bare asterisk in
+    # the middle of a sentence reads like a footnote.
+    ALL_NAMESPACES = '* (All NS)'
+
+    # Marks an object's name inside a finding, so the dashboard can pick it out
+    # of the sentence around it. Anything unmarked is prose.
+    def name_of value
+      "`#{value}`"
+    end
+
+    # The namespaces a finding refers to, named and marked.
+    def namespaces_of value
+      Array(value).map { |name| name_of(name.to_s == '*' ? ALL_NAMESPACES : name) }.join(', ')
+    end
+
     def get_cluster_slug
       raise "Cluster name must be specified in params" if @options.cluster.blank?
       @options.cluster.to_s.downcase.strip.gsub(/\W/,'-')

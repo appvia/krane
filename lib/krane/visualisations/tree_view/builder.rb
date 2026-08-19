@@ -33,9 +33,7 @@ module Krane
         end
 
         def build
-          dir = "#{Cli::Helpers::DATA_PATH}/#{@cluster}"
-          FileUtils.mkdir_p dir
-          File.write("#{dir}/rbac-tree.json", prepare_data)
+          Writer.new(cluster: @cluster, tree: prepare_data).write
         end
 
         private
@@ -76,28 +74,35 @@ module Krane
           wrap_facets
         end
 
+        # `facet` is the stable identifier for a top level branch: it names the
+        # directory its chunks are written to, and lets the UI key off something
+        # other than the display text.
         def wrap_facets
           {
             text: "#{@cluster} cluster",
             nodes: [
               {
+                facet: :namespaces,
                 text: "Namespaces", # name
                 nodes: @facets[:namespaces].collect {|k,v| prepare_node(:NAMESPACE, k, v)} # children
               },
               {
+                facet: :subjects,
                 text: "Actors", # name
                 nodes: @facets[:subjects].collect {|k,v| prepare_node(:ACTOR, k, v)} # children
               },
               {
+                facet: :roles,
                 text: "Roles", # name
                 nodes: @facets[:roles].collect {|k,v| prepare_node(:ROLE, k, v)} # children
               },
               {
+                facet: :resources,
                 text: "Resource Access", # name
                 nodes: @facets[:resources].collect {|k,v| prepare_node(:RESOURCE, k, v)} # children
               },
             ]
-          }.to_json
+          }
         end
 
         def prepare_node branch, key, elements, level=0
@@ -110,9 +115,13 @@ module Krane
           {
             branch: branch,
             text:   text,
-            nodes:  elements.blank? ? nil : elements.sort_by {|item, _| item[:text]}
-                                                    .collect {|ek, ev| prepare_node(branch, ek, ev, current_level)}
           }.tap do |n|
+            # A leaf carries no `nodes` key at all, rather than a null one: the
+            # data contract reads "inline children, a chunk reference, or nothing".
+            unless elements.blank?
+              n[:nodes] = elements.sort_by {|item, _| item[:text]}
+                                  .collect {|ek, ev| prepare_node(branch, ek, ev, current_level)}
+            end
             n[:tags]          = tag
             n[:navigable]     = current_level > 2 ? false : true # we only want to be navigating up to max 2 levels down the tree
             n[:resource_kind] = resource_kind unless resource_kind.blank?

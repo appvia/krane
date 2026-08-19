@@ -34,6 +34,7 @@ class CLI
 
   DEFAULT_CLUSTER_NAME   = 'default'
   DEFAULT_DASHBOARD_PORT = 8000
+  DEFAULT_DASHBOARD_BIND = '0.0.0.0'
   DEFAULT_REPORT_OUTPUT  = :json
 
   def run
@@ -91,10 +92,12 @@ class CLI
       c.example 'to start server on a specific port', 'krane dashboard --port <8080>'
       c.option '-c', '--cluster [CLUSTER NAME]', String, 'Cluster name. Default: default'
       c.option '-p', '--port [PORT]', Integer, 'Dahboard UI custom port. Default: 8000'
+      c.option '-b', '--bind [ADDRESS]', String, 'Address to bind to. Use 127.0.0.1 to keep the dashboard local. Default: 0.0.0.0'
       c.option '--verbose', 'Makes output verbose'
       c.action do |args, options|
         options.default cluster: DEFAULT_CLUSTER_NAME
         options.default port: DEFAULT_DASHBOARD_PORT
+        options.default bind: DEFAULT_DASHBOARD_BIND
 
         raise_on_cluster_missing options
         raise_on_cluster_report_missing options

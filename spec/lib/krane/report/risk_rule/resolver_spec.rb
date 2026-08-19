@@ -1,3 +1,14 @@
+# Writers are evaluated inside the report builder, so they can call the helpers
+# it carries. This stands in for that, rather than evaluating them somewhere the
+# helpers do not exist.
+class WriterContext
+  include Krane::Helpers
+
+  def evaluate writer, result # rubocop:disable Lint/UnusedMethodArgument -- the writer reads it
+    eval writer
+  end
+end
+
 RSpec.describe Krane::Report::RiskRule::Resolver do
 
   describe '#risk_rules' do
@@ -133,8 +144,8 @@ RSpec.describe Krane::Report::RiskRule::Resolver do
         it 'resolves to a writer which evaluates to the risk message' do
           writer = subject.risk_rules.first.writer
 
-          expect(eval(writer)).to eq(
-            'User bob has * access to * resources (apiGroup: *) in team-a namespace'
+          expect(WriterContext.new.evaluate(writer, result)).to eq(
+            'User `bob` has * access to * resources (apiGroup: *) in `team-a` namespace'
           )
         end
 
@@ -145,8 +156,8 @@ RSpec.describe Krane::Report::RiskRule::Resolver do
           it 'resolves to a writer which evaluates to the risk message' do
             writer = subject.risk_rules.first.writer
 
-            expect(eval(writer)).to eq(
-              'User bob has * access to * non-resource URLs (apiGroup: *) in team-a namespace'
+            expect(WriterContext.new.evaluate(writer, result)).to eq(
+              'User `bob` has * access to * non-resource URLs (apiGroup: *) in `team-a` namespace'
             )
           end
 

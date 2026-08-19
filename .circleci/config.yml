@@ -34,6 +34,53 @@ jobs:
       - store_artifacts:
           path: coverage
 
+  dashboard_test:
+    docker:
+      - image: cimg/node:22.23
+    working_directory: ~/project
+    environment:
+      # A dashboard build has nothing to report to npm.
+      NPM_CONFIG_FUND: "false"
+      NPM_CONFIG_AUDIT: "false"
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - npm-v1-{{ checksum "dashboard/package-lock.json" }}
+      - run:
+          name: Install dependencies
+          command: npm ci
+          working_directory: dashboard
+      - save_cache:
+          key: npm-v1-{{ checksum "dashboard/package-lock.json" }}
+          paths:
+            - ~/.npm
+      - run:
+          name: Lint
+          command: npm run lint
+          working_directory: dashboard
+      - run:
+          name: Typecheck
+          command: npm run typecheck
+          working_directory: dashboard
+      - run:
+          name: Test
+          command: npm run test
+          working_directory: dashboard
+      - run:
+          name: Build
+          command: npm run build
+          working_directory: dashboard
+      - run:
+          name: Audit dependencies
+          command: npm audit --audit-level=high
+          working_directory: dashboard
+      - run:
+          # Krane runs in air gapped clusters, so a CDN reference is a bug.
+          name: Check the build loads nothing remote
+          command: npm run check:offline
+          working_directory: dashboard
+
   build_only:
     executor: skaffold
     steps:
@@ -136,9 +183,15 @@ workflows:
             tags:
               only: /^v.*$/
 
+      - dashboard_test:
+          filters:
+            tags:
+              only: /^v.*$/
+
       - build_only:
           requires:
           - test
+          - dashboard_test
           filters:
             branches:
               ignore: master
@@ -148,6 +201,7 @@ workflows:
       - build_and_push:
           requires:
           - test
+          - dashboard_test
           filters:
             branches:
               only: master

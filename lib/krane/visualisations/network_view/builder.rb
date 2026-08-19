@@ -31,7 +31,7 @@ module Krane
         end
 
         def build
-          dir = "#{Cli::Helpers::DATA_PATH}/#{@cluster}"
+          dir = File.join(Cli::Helpers.data_root, @cluster)
           FileUtils.mkdir_p dir
           File.write("#{dir}/rbac-network.json", prepare_network_data)
         end

@@ -146,9 +146,26 @@ module Krane
       #
       # @return [nil]
       def cache_dashboard_data findings
-        dashboard_data_dir = "#{Cli::Helpers::DATA_PATH}/#{@cluster}"
+        dashboard_data_dir = File.join(Cli::Helpers.data_root, @cluster)
         FileUtils.mkdir_p dashboard_data_dir
         File.write("#{dashboard_data_dir}/rbac-findings.json", findings.to_json)
+
+        publish_risk_rules
+        Dashboard::Clusters.record @cluster
+      end
+
+      # Publishes the risk rule definitions the dashboard's Rules page reads.
+      # They are cluster independent, so they live alongside the per-cluster data
+      # rather than inside it.
+      #
+      # @return [nil]
+      def publish_risk_rules
+        source = File.join(Cli::Helpers::APP_ROOT, 'config/rules.yaml')
+        return unless File.exist?(source)
+
+        target_dir = File.join(Cli::Helpers.data_root, 'config')
+        FileUtils.mkdir_p target_dir
+        FileUtils.cp source, File.join(target_dir, 'rules.yaml')
       end
 
       # Delivers Slack notifications
@@ -174,7 +191,7 @@ module Krane
                         Check bindings below and create Role if required.',
           data:         @ingest[:undefined_roles],
           writer:       -> r do
-                          "#{r.role_kind} #{r.role_name} referenced in #{r.binding_kind} #{r.binding_name}"
+                          "#{r.role_kind} #{name_of(r.role_name)} referenced in #{r.binding_kind} #{name_of(r.binding_name)}"
                         end
         )
 
@@ -186,7 +203,7 @@ module Krane
                         Roles should be reviewed and potentially removed.',
           data:         @ingest[:unused_roles],
           writer:       -> r do
-                          "#{r.role_kind} #{r.role_name}"
+                          "#{r.role_kind} #{name_of(r.role_name)}"
                         end
         )
 
@@ -198,7 +215,7 @@ module Krane
                         Should those bindings exist?',
           data:         @ingest[:bindings_without_subject],
           writer:       -> r do
-                          "#{r.binding_kind} #{r.binding_name}"
+                          "#{r.binding_kind} #{name_of(r.binding_name)}"
                         end
         )
       end
