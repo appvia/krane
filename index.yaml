@@ -2,6 +2,25 @@ apiVersion: v1
 entries:
   krane:
   - apiVersion: v2
+    appVersion: v0.1.4
+    created: "2026-08-19T16:01:38.501533659Z"
+    description: A Helm chart for Krane
+    digest: f65525ab774a1ea61344bdf2b0adb585ea0f37057ab2c8b62809fd40acb80911
+    maintainers:
+    - email: info@appvia.io
+      name: Appvia
+      url: https://appvia.io
+    - email: marcin.ciszak@appvia.io
+      name: Marcin
+      url: https://github.com/marcinc
+    name: krane
+    sources:
+    - https://github.com/appvia/krane
+    type: application
+    urls:
+    - https://github.com/appvia/krane/releases/download/krane-0.1.4/krane-0.1.4.tgz
+    version: 0.1.4
+  - apiVersion: v2
     appVersion: v0.1.3
     created: "2024-12-18T10:59:17.13171564Z"
     description: A Helm chart for Krane
@@ -30,4 +49,4 @@ entries:
     urls:
     - https://github.com/appvia/krane/releases/download/krane-0.1.1/krane-0.1.1.tgz
     version: 0.1.1
-generated: "2026-08-19T14:53:30.229525616Z"
+generated: "2026-08-19T16:01:38.501576969Z"
