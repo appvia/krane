@@ -16,7 +16,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    io.appvia.krane/version: v0.1.0
+    io.appvia.krane/version: v0.1.4
     io.appvia.krane.service: redisgraph
   name: redisgraph
 spec:
