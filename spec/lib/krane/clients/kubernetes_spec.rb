@@ -74,6 +74,45 @@ RSpec.describe Krane::Clients::Kubernetes do
 
   end
 
+  describe '#version' do
+
+    let(:options) { OpenStruct.new(incluster: true) } # --incluster
+
+    let(:rest_client) { double }
+    let(:headers)     { { Authorization: 'Bearer xxxxx' } }
+    let(:client)      { double(get_headers: headers) }
+
+    before do
+      allow(File).to receive(:exist?).with(described_class::CA_FILE_PATH) { true }
+      allow(Kubeclient::Client).to receive(:new) { client }
+      allow(client).to receive(:create_rest_client).with('/version') { rest_client }
+    end
+
+    it 'queries the /version endpoint with the authentication and ssl options of the cluster' do
+      expect(Kubeclient::Client).to receive(:new).with(
+        described_class::API_ENDPOINT, 'v1',
+        auth_options: { bearer_token_file: described_class::TOKEN_FILE_PATH },
+        ssl_options:  { ca_file: described_class::CA_FILE_PATH }
+      ) { client }
+      expect(rest_client).to receive(:get).with(headers) { '{"major":"1","minor":"32"}' }
+
+      expect(subject.version).to eq Gem::Version.new('1.32')
+    end
+
+    it 'strips non numeric characters from the reported version' do
+      allow(rest_client).to receive(:get) { '{"major":"1","minor":"32+"}' }
+
+      expect(subject.version).to eq Gem::Version.new('1.32')
+    end
+
+    it 'raises when the api server does not return a version' do
+      allow(rest_client).to receive(:get) { '{"kind":"Status","code":401,"message":"Unauthorized"}' }
+
+      expect { subject.version }.to raise_error(ArgumentError)
+    end
+
+  end
+
   describe '#psp' do
 
     let(:options) { OpenStruct.new(incluster: true) } # --incluster

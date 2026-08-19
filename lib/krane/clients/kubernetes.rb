@@ -47,21 +47,24 @@ module Krane
         end
       end
 
+      # Kubernetes server version as reported by the API server `/version` endpoint.
+      # Raises when the version could not be retrieved or parsed.
       memoize def version
-        url = URI("#{@api_endpoint}/version")
+        client = Kubeclient::Client.new(
+          @api_endpoint, 'v1',
+          auth_options: @auth_options,
+          ssl_options:  @ssl_options
+        )
 
-        http = Net::HTTP.new(url.host, url.port)
-        http.use_ssl = (url.scheme == "https")
-        http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        # `get_headers` carries the bearer token (re-read from the token file when in-cluster)
+        # and `create_rest_client` applies the CA and client certificate options.
+        # Note: kubeclient suffixes the endpoint it was given with `/api`, so derive the
+        # `/version` path from the endpoint we were configured with instead.
+        version_path = URI.parse(@api_endpoint.to_s).path.chomp('/') + '/version'
+        response     = client.create_rest_client(version_path).get(client.get_headers)
+        info         = JSON.parse(response)
 
-        request = Net::HTTP::Get.new(url)
-        request["Content-Type"] = "application/json"
-        request["Authorization"] = "Bearer #{@auth_options[:bearer_token]}"
-
-        response = http.request(request)
-        j = JSON.parse(response.read_body)
-
-        "#{j['major']}.#{j['minor']}".to_f
+        Gem::Version.new("#{info['major']}.#{info['minor']}".gsub(/[^\d.]/, ''))
       end
 
       memoize def psp
