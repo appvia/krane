@@ -38,6 +38,11 @@ module Krane
 
         private
 
+        # Deliberately unordered. RedisGraph buffers the whole projection to sort
+        # it, and on a mid-sized cluster that sort costs an order of magnitude
+        # more memory than the rows themselves - enough to have the graph killed
+        # where it runs under a memory limit, which is how it is shipped. Order
+        # is a display concern and `sorted` applies it on the way out.
         def query_graph
           res = @graph.query(%Q(
             MATCH (ns:Namespace)<-[:ACCESS]-(s:Subject)-[:ASSIGN]->(r:Role)-[:GRANT]->(ru:Rule)
@@ -56,7 +61,6 @@ module Krane
                    ru.resource_name as rule_resource_name, 
                    ru.url as rule_url, 
                    ru.verb as rule_verb
-            ORDER BY namespace_name,subject_kind,subject_name,role_kind,role_name,rule_resource
           ))
 
           [res.columns, res.resultset]
@@ -84,25 +88,32 @@ module Krane
               {
                 facet: :namespaces,
                 text: "Namespaces", # name
-                nodes: @facets[:namespaces].collect {|k,v| prepare_node(:NAMESPACE, k, v)} # children
+                nodes: sorted(@facets[:namespaces]).collect {|k,v| prepare_node(:NAMESPACE, k, v)} # children
               },
               {
                 facet: :subjects,
                 text: "Actors", # name
-                nodes: @facets[:subjects].collect {|k,v| prepare_node(:ACTOR, k, v)} # children
+                nodes: sorted(@facets[:subjects]).collect {|k,v| prepare_node(:ACTOR, k, v)} # children
               },
               {
                 facet: :roles,
                 text: "Roles", # name
-                nodes: @facets[:roles].collect {|k,v| prepare_node(:ROLE, k, v)} # children
+                nodes: sorted(@facets[:roles]).collect {|k,v| prepare_node(:ROLE, k, v)} # children
               },
               {
                 facet: :resources,
                 text: "Resource Access", # name
-                nodes: @facets[:resources].collect {|k,v| prepare_node(:RESOURCE, k, v)} # children
+                nodes: sorted(@facets[:resources]).collect {|k,v| prepare_node(:RESOURCE, k, v)} # children
               },
             ]
           }
+        end
+
+        # Top level of a facet, in display order. Everything below it is sorted by
+        # `prepare_node`; this is the one level that isn't, because it is read
+        # straight off the facet hash where the order is however the rows arrived.
+        def sorted facet
+          facet.sort_by {|key, _| key[:text].to_s}
         end
 
         def prepare_node branch, key, elements, level=0
