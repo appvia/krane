@@ -24,6 +24,9 @@ module Krane
 
       RBAC_CACHE_DIR = File.expand_path(File.join(File.dirname(__FILE__), '../../../', 'cache'))
 
+      # PodSecurityPolicy (policy/v1beta1) was removed from Kubernetes in 1.25
+      PSP_REMOVED_IN = Gem::Version.new('1.25')
+
       def initialize options
         @options    = options
         @cluster    = get_cluster_slug
@@ -61,7 +64,7 @@ module Krane
 
         graph = build_graph(@cache_path) do
           bootstrap_nodes
-          psp if k8s.version < 1.25
+          psp if psp_supported?(k8s)
           roles
           cluster_roles
           role_bindings
@@ -85,6 +88,17 @@ module Krane
         }
       end
 
+      # PodSecurityPolicies are only fetched and indexed for clusters that still serve them.
+      # When the cluster version cannot be determined we skip them, as querying the removed
+      # `policy/v1beta1` API on a modern cluster fails the whole report with a 404.
+      def psp_supported? k8s
+        k8s.version < PSP_REMOVED_IN
+      rescue StandardError => e
+        banner :warn, "Unable to determine Kubernetes version (#{e.message}). " \
+                      "Skipping PodSecurityPolicy, removed in Kubernetes #{PSP_REMOVED_IN}."
+        false
+      end
+
       def build_graph(path, &block)
         Docile.dsl_eval(Graph::Builder.new(path: path, options: @options), &block)
       end
@@ -96,7 +110,7 @@ module Krane
 
         FileUtils.mkdir_p @cache_path
 
-        File.write("#{@cache_path}/psp",                 k8s.psp.get_pod_security_policies(as: :raw))  if k8s.version < 1.25
+        File.write("#{@cache_path}/psp",                 k8s.psp.get_pod_security_policies(as: :raw))  if psp_supported?(k8s)
         File.write("#{@cache_path}/roles",               k8s.rbac.get_roles(as: :raw))
         File.write("#{@cache_path}/rolebindings",        k8s.rbac.get_role_bindings(as: :raw))
         File.write("#{@cache_path}/clusterroles",        k8s.rbac.get_cluster_roles(as: :raw))

@@ -170,7 +170,7 @@ RSpec.describe Krane::Rbac::Ingest do
         @instance.instance_variable_set(:@cache_path, dir)
 
         allow(Krane::Clients::Kubernetes).to receive(:new).with(options) { k8s_client }
-        allow(k8s_client).to receive(:version) { 1.23 }
+        allow(k8s_client).to receive(:version) { Gem::Version.new('1.23') }
       end
 
       it 'will build and index rbac graph, and return a results map' do
@@ -229,7 +229,7 @@ RSpec.describe Krane::Rbac::Ingest do
       context 'for k8s version < 1.25' do
 
         before do
-          allow(k8s_client).to receive(:version) { 1.23 }
+          allow(k8s_client).to receive(:version) { Gem::Version.new('1.23') }
           allow(k8s_client).to receive_message_chain(:psp, :get_pod_security_policies).with(as: :raw) { psps }
         end
 
@@ -250,10 +250,30 @@ RSpec.describe Krane::Rbac::Ingest do
       context 'for k8s version >= 1.25' do
 
         before do
-          allow(k8s_client).to receive(:version) { 1.25 }
+          allow(k8s_client).to receive(:version) { Gem::Version.new('1.32') }
         end
 
         it 'will call Kubernetes API and fetch RBAC objects excluding deprecated PSPs and cache them locally' do
+          expect(FileUtils).to receive(:mkdir_p).with(dir)
+          expect(File).to_not receive(:write).with("#{dir}/psp", psps)
+          expect(File).to receive(:write).with("#{dir}/roles", roles)
+          expect(File).to receive(:write).with("#{dir}/rolebindings", role_bindings)
+          expect(File).to receive(:write).with("#{dir}/clusterroles", cluster_roles)
+          expect(File).to receive(:write).with("#{dir}/clusterrolebindings", cluster_role_bindings)
+
+          @instance.send(:fetch_rbac)
+        end
+
+      end
+
+
+      context 'when the k8s version cannot be determined' do
+
+        before do
+          allow(k8s_client).to receive(:version).and_raise(StandardError, 'Unauthorized')
+        end
+
+        it 'will not query the removed PSP API and will fetch the remaining RBAC objects' do
           expect(FileUtils).to receive(:mkdir_p).with(dir)
           expect(File).to_not receive(:write).with("#{dir}/psp", psps)
           expect(File).to receive(:write).with("#{dir}/roles", roles)
