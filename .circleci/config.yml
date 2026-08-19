@@ -136,6 +136,13 @@ jobs:
             skaffold_tag=$(cat build/${CIRCLE_SHA1}.json | jq -r '.builds[0].tag | split("@")[0]')
             skaffold_image=$(cat build/${CIRCLE_SHA1}.json | jq -r '.builds[0].imageName')
             docker buildx imagetools create -t quay.io/appvia/krane:latest ${skaffold_tag}
+            # Skaffold names the image after `git describe`, which picks arbitrarily
+            # between tags sharing a commit, so a release can end up published under
+            # the chart's `krane-x.y.z` tag instead. Publish the release tag we were
+            # actually built for.
+            if [ -n "${CIRCLE_TAG:-}" ]; then
+              docker buildx imagetools create -t ${skaffold_image}:${CIRCLE_TAG} ${skaffold_tag}
+            fi
       - persist_to_workspace:
           root: ~/project
           paths:
