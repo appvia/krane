@@ -16,7 +16,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    io.appvia.krane/version: v0.1.5
+    io.appvia.krane/version: v0.1.6
     io.appvia.krane.service: falkordb
   name: falkordb
 spec:

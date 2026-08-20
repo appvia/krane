@@ -111,6 +111,8 @@ spec:
             value: "{{ .Values.params.slackWebhookURL }}"
           - name: SLACK_CHANNEL
             value: "{{ .Values.params.slackChannel }}"
+          - name: TREAT_VENDOR_MANAGED_ROLES_AS_DEFAULT
+            value: "{{ .Values.params.treatVendorManagedRolesAsDefault }}"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

@@ -14,6 +14,11 @@ params:
   falkorDBHost: falkordb
   slackWebhookURL: ""
   slackChannel: ""
+  # RBAC installed and reconciled by a managed control plane - EKS, GKE, AKS,
+  # OpenShift - is classified alongside the roles Kubernetes bootstraps, and so
+  # skipped by the risk rules that already exclude those. Set to false to have it
+  # judged like operator authored RBAC instead.
+  treatVendorManagedRolesAsDefault: true
 
 imagePullSecrets: []
 nameOverride: ""

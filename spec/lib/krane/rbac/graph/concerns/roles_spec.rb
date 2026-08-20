@@ -385,6 +385,55 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Roles do
 
     end
 
+    describe '#extract_role_attrs' do
+
+      # Cloud providers ship their own RBAC, which the operator can neither edit nor remove. Left
+      # unmarked it is evaluated like operator authored RBAC and fills the report with findings
+      # nothing can be done about, so it is classified alongside the Kubernetes defaults.
+      describe 'is_default' do
+
+        def is_default_for role
+          subject.send(:extract_role_attrs, role: role)[:is_default]
+        end
+
+        it 'is true for a role bootstrapped by Kubernetes' do
+          expect(is_default_for build(:cluster_role, :default)).to eq true
+        end
+
+        it 'is true for a role labelled as owned by a cloud provider' do
+          expect(is_default_for build(:cluster_role, :vendor_managed_by_label)).to eq true
+        end
+
+        it 'is true for a role named under a prefix a cloud provider reserves' do
+          expect(is_default_for build(:cluster_role, :vendor_managed_by_name)).to eq true
+        end
+
+        it 'is false for an operator authored role' do
+          expect(is_default_for build(:cluster_role)).to eq false
+        end
+
+        it 'is false for a role whose name merely contains a vendor prefix' do
+          expect(is_default_for build(:cluster_role, name: 'team-eks:admin')).to eq false
+        end
+
+        context 'with vendor managed roles opted out of via the environment' do
+
+          before { stub_const('ENV', ENV.to_h.merge('TREAT_VENDOR_MANAGED_ROLES_AS_DEFAULT' => 'false')) }
+
+          it 'is false for a vendor managed role' do
+            expect(is_default_for build(:cluster_role, :vendor_managed_by_name)).to eq false
+          end
+
+          it 'is still true for a role bootstrapped by Kubernetes' do
+            expect(is_default_for build(:cluster_role, :default)).to eq true
+          end
+
+        end
+
+      end
+
+    end
+
   end
 
 end
