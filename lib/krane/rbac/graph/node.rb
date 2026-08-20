@@ -68,7 +68,7 @@ module Krane
 
           title = if (kind == :Role)
             ["#{k}: #{l}"].tap do |t|
-              t << "- Default k8s role" if d
+              t << "- Default role (Kubernetes or cloud provider managed)" if d
               t << "- Aggregates rules defined in other cluster roles" if c
               t << "- Can be aggregated by cluster roles: #{i}" if a
             end.join("\n")

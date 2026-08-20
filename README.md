@@ -280,6 +280,33 @@ Note: Example query above will select all Subjects with assigned Roles/ClusterRo
 RBAC risk rules are defined in the [Rules](config/rules.yaml) file. The structure of each rule is largely self-explanatory.
 Built-in set can be expanded / overridden by adding extra custom rules to the [Cutom Rules](config/custom-rules.yaml) file.
 
+#### Default and vendor managed roles
+
+Most rules skip roles the cluster operator did not author, because a finding against a role nobody can edit
+is noise rather than a risk. That covers the roles Kubernetes bootstraps itself, labelled
+`kubernetes.io/bootstrapping: rbac-defaults`, and the RBAC a managed control plane installs and reconciles on
+your behalf — EKS, GKE, AKS and OpenShift all ship their own, and none of it carries the bootstrapping label.
+
+Vendor managed roles are recognised by the markers their provider stamps on the RBAC it owns, rather than by
+an enumeration of role names that would go stale with each provider release. A role qualifies when it carries
+one of these labels:
+
+| Label | Provider |
+|---|---|
+| `eks.amazonaws.com/component` | EKS |
+| `addonmanager.kubernetes.io/mode` | GKE, AKS |
+| `kubernetes.azure.com/managedby` | AKS |
+
+or when its name begins with a prefix the provider has reserved: `eks:`, `aws-node` (EKS); `gce:`,
+`system:gcp-`, `system:gke-` (GKE); `aks-`, `system:azure-` (AKS); `openshift-`, `system:openshift:`
+(OpenShift).
+
+To audit vendor RBAC as well, set `TREAT_VENDOR_MANAGED_ROLES_AS_DEFAULT=false` — vendor roles are then judged
+like any other, while Kubernetes' own defaults stay excluded. Setting
+`RISK_RULE_QUERY_EXCLUDE_DEFAULT_ROLES=false` goes further and brings both back into the role oriented rules.
+In the other direction, individual roles can be exempted by name through `whitelist_role_names` in the
+[Whitelist](config/whitelist.yaml).
+
 #### Unauthenticated access
 
 Most built-in rules judge a subject by the permissions it holds. The `unauthenticated-subject-access` rule

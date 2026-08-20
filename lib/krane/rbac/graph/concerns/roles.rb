@@ -23,6 +23,37 @@ module Krane
         module Roles
           extend ActiveSupport::Concern
 
+          # Cloud providers install their own RBAC alongside the Kubernetes defaults. Those roles are
+          # no more actionable to a cluster operator than the bootstrapped ones - they are reconciled
+          # by the managed control plane and cannot be edited - but they carry no
+          # `kubernetes.io/bootstrapping` label, so without this they surface in every risk rule as
+          # noise the operator can do nothing about.
+          #
+          # Detection is marker based rather than an enumeration of role names, which would go stale
+          # with every provider release. A role counts as vendor managed when it either carries a
+          # label the provider stamps on the RBAC it owns, or its name uses a prefix the provider has
+          # reserved for itself.
+          VENDOR_MANAGED_ROLE_LABELS = [
+            'eks.amazonaws.com/component',     # EKS
+            'addonmanager.kubernetes.io/mode', # GKE and AKS addon manager
+            'kubernetes.azure.com/managedby'   # AKS
+          ].freeze
+
+          VENDOR_MANAGED_ROLE_NAME_PREFIXES = [
+            'eks:',              # EKS
+            'aws-node',          # EKS VPC CNI
+            'gce:',              # GKE
+            'system:gcp-',       # GKE
+            'system:gke-',       # GKE
+            'aks-',              # AKS
+            'system:azure-',     # AKS
+            'openshift-',        # OpenShift
+            'system:openshift:'  # OpenShift
+          ].freeze
+
+          # Set to false to have vendor managed roles evaluated like any other role.
+          TREAT_VENDOR_MANAGED_ROLES_AS_DEFAULT = true
+
           included do
 
             # Iterates through Roles and processes them
@@ -137,7 +168,7 @@ module Krane
                 role_name:      role['metadata']['name'],
                 version:        role['metadata']['resourceVersion'],
                 created_at:     role['metadata']['creationTimestamp'],
-                is_default:     role['metadata'].try(:[], 'labels').try(:[], 'kubernetes.io/bootstrapping') == 'rbac-defaults' || false,
+                is_default:     default_role?(role),
                 is_composite:   role.key?('aggregationRule'),
                 aggregable_by:  role['metadata'].key?('labels') && role['metadata']['labels'].collect do |k, v|
                                   k =~ /rbac.authorization.k8s.io\/aggregate-to-(.*)/ && v == 'true' ? $1 : nil
@@ -146,6 +177,47 @@ module Krane
               }.tap do |h|
                 h[:is_aggregable] = !h[:aggregable_by].empty?
               end
+            end
+
+            # Tells whether a role is supplied by the platform rather than by the cluster operator.
+            # That covers the roles Kubernetes bootstraps as well as the ones a managed control
+            # plane installs and reconciles on the operator's behalf.
+            #
+            # @param role [Hash] - raw Role/ClusterRole object
+            #
+            # @return [Bool]
+            def default_role? role
+              bootstrapped_role?(role) || vendor_managed_role?(role)
+            end
+
+            # Tells whether a role is one of the Kubernetes RBAC defaults
+            #
+            # @param role [Hash] - raw Role/ClusterRole object
+            #
+            # @return [Bool]
+            def bootstrapped_role? role
+              role['metadata'].try(:[], 'labels').try(:[], 'kubernetes.io/bootstrapping') == 'rbac-defaults'
+            end
+
+            # Tells whether a role is installed and reconciled by a cloud provider
+            #
+            # @param role [Hash] - raw Role/ClusterRole object
+            #
+            # @return [Bool]
+            def vendor_managed_role? role
+              return false unless treat_vendor_managed_roles_as_default?
+
+              labels = role['metadata'].try(:[], 'labels') || {}
+              name   = role['metadata']['name'].to_s
+
+              VENDOR_MANAGED_ROLE_LABELS.any? {|label| labels.key?(label) } ||
+                VENDOR_MANAGED_ROLE_NAME_PREFIXES.any? {|prefix| name.start_with?(prefix) }
+            end
+
+            def treat_vendor_managed_roles_as_default?
+              ENV.fetch(
+                'TREAT_VENDOR_MANAGED_ROLES_AS_DEFAULT', TREAT_VENDOR_MANAGED_ROLES_AS_DEFAULT
+              ).to_s == 'true'
             end
 
             # Caches aggregable roles

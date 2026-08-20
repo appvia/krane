@@ -72,6 +72,22 @@ FactoryBot.define do
       end
     end
 
+    trait :vendor_managed_by_label do
+      transient do
+        labels do
+          {
+            "eks.amazonaws.com/component": "addon-manager"
+          }
+        end
+      end
+    end
+
+    trait :vendor_managed_by_name do
+      transient do
+        name { 'eks:addon-manager' }
+      end
+    end
+
     skip_create
     initialize_with do
       {

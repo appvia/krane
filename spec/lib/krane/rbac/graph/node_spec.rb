@@ -83,7 +83,7 @@ RSpec.describe Krane::Rbac::Graph::Node do
         it 'builds network node title correctly' do
           title = subject.to_network[:title]
           expect(title).to include("#{subject.attrs[:kind]}: #{subject.attrs[:name]}")
-          expect(title).to include("- Default k8s role")
+          expect(title).to include("- Default role (Kubernetes or cloud provider managed)")
         end
 
         it 'builds network node group attribure correctly' do
@@ -143,7 +143,7 @@ RSpec.describe Krane::Rbac::Graph::Node do
         it 'builds node title attribute correctly' do
           title = subject.to_network[:title]
           expect(title).to include("#{subject.attrs[:kind]}: #{subject.attrs[:name]}")
-          expect(title).not_to include("- Default k8s role")
+          expect(title).not_to include("- Default role (Kubernetes or cloud provider managed)")
           expect(title).not_to include("- Aggregates rules defined in other cluster roles")
           expect(title).not_to include("- Can be aggregated by cluster roles: #{subject.attrs[:aggregable_by]}")
         end
