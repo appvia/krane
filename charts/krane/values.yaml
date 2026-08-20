@@ -11,7 +11,7 @@ image:
 params:
   reportInterval: 30
   reportOutput: none
-  redisGraphHost: redisgraph
+  falkorDBHost: falkordb
   slackWebhookURL: ""
   slackChannel: ""
 
@@ -83,6 +83,13 @@ tolerations: []
 affinity: {}
 
 # Dependencies
-redisgraph:
-  image: redislabs/redisgraph
-  tag: 2.6.1
+falkordb:
+  image: falkordb/falkordb
+  tag: v4.20.3
+  # The image defaults cap result sets at 10k rows and read queries at 1s, which
+  # would silently truncate reports on a large cluster. Krane needs whole result
+  # sets, the way RedisGraph served them.
+  args: "MAX_QUEUED_QUERIES 25 TIMEOUT_MAX 0 RESULTSET_SIZE -1"
+  # Krane talks to the graph directly, so the bundled web UI is dead weight
+  # - and it accounts for most of the idle memory footprint.
+  browser: 0

@@ -55,7 +55,7 @@ Follow Helm chart installation output on how to port-forward Krane dashboard.
 
 It is assumed that you have [docker](https://docs.docker.com/get-docker/) running on your local machine. Install [docker-compose](https://docs.docker.com/compose/install/#install-compose) if you haven't already.
 
-Krane depends on RedisGraph. `docker-compose` stack defines all what's required to build and run _Krane_ service locally. It'll also take care of its [RedisGraph](https://oss.redislabs.com/redisgraph/) dependency.
+Krane depends on FalkorDB. `docker-compose` stack defines all what's required to build and run _Krane_ service locally. It'll also take care of its [FalkorDB](https://www.falkordb.com/) dependency.
 
 ```
 docker-compose up -d
@@ -202,7 +202,7 @@ The dashboard is a set of static files served from `dashboard/compiled`, and the
 
 ### RBAC Data indexed in a local Graph database
 
-_Krane_ indexes RBAC entites in RedisGraph. This allows us to query network of dependencies efficiently and simply using subset of [CypherQL](https://oss.redislabs.com/redisgraph/cypher_support/) supported by [RedisGraph](https://oss.redislabs.com/redisgraph/).
+_Krane_ indexes RBAC entites in FalkorDB. This allows us to query network of dependencies efficiently and simply using subset of [CypherQL](https://docs.falkordb.com/cypher/) supported by [FalkorDB](https://www.falkordb.com/).
 
 #### Schema
 
@@ -234,7 +234,7 @@ Only exceptions are `:AGGREGATE` and `:COMPOSITE` relations which are uni-direct
 
 #### Querying the Graph
 
-In order to query the graph directly you can exec into a running `redisgraph` container, start `redis-cli` and run your arbitrary queries. Follow official [instructions](https://oss.redislabs.com/redisgraph/) for examples of [commands](https://oss.redislabs.com/redisgraph/commands/).
+In order to query the graph directly you can exec into a running `falkordb` container, start `redis-cli` and run your arbitrary queries. Follow official [instructions](https://docs.falkordb.com/) for examples of [commands](https://docs.falkordb.com/commands/).
 
 You can also query the Graph from _Krane_ console. First exec into running _Krane_ container, then
 
@@ -245,7 +245,7 @@ console
 
 # Instantiate Graph client
 
-graph = Krane::Clients::RedisGraph.client cluster: 'default'
+graph = Krane::Clients::FalkorDB.client cluster: 'default'
 
 # Run arbitrary CypherQL query against indexed RBAC Graph
 
@@ -286,7 +286,7 @@ Macros are "containers" for a set of common/shared attributes, and referenced by
 
 Macro can contain any of the following attributes:
 
-- `query`   - [RedisGraph query](#querying-the-graph). Has precedence over `template`. Requires `writer` to be defined.
+- `query`   - [FalkorDB query](#querying-the-graph). Has precedence over `template`. Requires `writer` to be defined.
 - `writer`  - Writer is a Ruby expression used to format `query` result set. Writer has precedence over `template`.
 - `template` - Built-in query/writer template name. If `query` & `writer` are not specified then chosen query generator will be used along with matching writer.
 
@@ -298,7 +298,7 @@ Rule can contain any of the following attributes:
 - `group_title`  [Required] Title applying to all items falling under this risk check.
 - `severity`     [Required] Severity, as one of :danger, :warning, :info.
 - `info`         [Required] Textual information about the check and suggestions on how to mitigate the risk.
-- `query`        [Conditonal] [RedisGraph query](#querying-the-graph).
+- `query`        [Conditonal] [FalkorDB query](#querying-the-graph).
   - Has precedence over `template`. Requires `writer` to be defined.
 - `writer`       [Conditonal] Writer is a Ruby expression used to format query result set.
   - Writer has precedence over `template`. Requires `query` to be defined.
@@ -448,7 +448,7 @@ _Krane_ can be deployed to a local or remote Kubernetes clusters easily.
 
 Kubernetes namespace, service account along with appropriate RBAC must be present in the cluster. See the [Prerequisites](k8s/one-time/prerequisites.yaml) for reference.
 
-Default _Krane_ entrypoint executes [bin/in-cluster-run](bin/in-cluster-run) which waits for RedisGraph instance to become available before starting RBAC _report_ loop and _dashboard_ web server.
+Default _Krane_ entrypoint executes [bin/in-cluster-run](bin/in-cluster-run) which waits for FalkorDB instance to become available before starting RBAC _report_ loop and _dashboard_ web server.
 
 You may control certain aspects of in-cluster execution with the following environment variables:
 
@@ -477,8 +477,8 @@ See [values.yaml](charts/krane/values.yaml) file for details of other settable o
 kubectl create \
   --context <docker-desktop> \
   --namespace krane \
-  -f k8s/redisgraph-service.yaml \
-  -f k8s/redisgraph-deployment.yaml \
+  -f k8s/falkordb-service.yaml \
+  -f k8s/falkordb-deployment.yaml \
   -f k8s/krane-service.yaml \
   -f k8s/krane-deployment.yaml
 ```
@@ -519,7 +519,7 @@ docker stack services --orchestrator kubernetes --namespace krane krane
 Command above will produce the following output:
 ```
 ID                  NAME                MODE                REPLICAS            IMAGE                         PORTS
-0de30651-dd5        krane_redisgraph    replicated          1/1                 redislabs/redisgraph:1.99.7   *:6379->6379/tcp
+0de30651-dd5        krane_falkordb      replicated          1/1                 falkordb/falkordb:v4.20.3     *:6379->6379/tcp
 aa377a5f-62b        krane_krane         replicated          1/1                 quay.io/appvia/krane:latest   *:8000->8000/tcp
 ```
 
@@ -555,13 +555,13 @@ Install _Krane_ code dependencies with
 
 ### Dependencies
 
-_Krane_ depends on [RedisGraph](https://oss.redislabs.com/redisgraph/). `docker-compose` is the quickest way to get _Krane_'s dependencies running locally.
+_Krane_ depends on [FalkorDB](https://www.falkordb.com/). `docker-compose` is the quickest way to get _Krane_'s dependencies running locally.
 
 ```sh
-docker-compose up -d redisgraph
+docker-compose up -d falkordb
 ```
 
-To inspect RedisGraph service is up:
+To inspect FalkorDB service is up:
 ```sh
 docker-compose ps
 ```
@@ -642,3 +642,18 @@ Author:  Marcin Ciszak <marcin.ciszak@appvia.io>
 Copyright (c) 2019-2020 [Appvia Ltd](https://appvia.io)
 
 This project is distributed under the [Apache License, Version 2.0](./LICENSE).
+
+### A note on the graph database
+
+_Krane_ stores its RBAC graph in [FalkorDB](https://github.com/FalkorDB/FalkorDB), which is licensed under the
+[Server Side Public License v1](https://github.com/FalkorDB/FalkorDB/blob/master/LICENSE) (SSPL). SSPL is a
+source-available licence, not an OSI-approved open source one. _Krane_ itself remains Apache-2.0: it contains no
+FalkorDB code and does not redistribute it. FalkorDB runs as a separate process that _Krane_ talks to over the Redis
+wire protocol, and the container image is pulled from Docker Hub at deploy time.
+
+For the overwhelming majority of users this changes nothing. SSPL places no conditions on *running* the database -
+including inside a company, on internal clusters, for colleagues. Its one obligation (section 13) is triggered by
+offering the database's functionality *to third parties as a service*, which is not what _Krane_ does.
+
+_Krane_ previously used RedisGraph, which was itself source-available under the Redis Source Available License, so
+this is a change of restrictive licence rather than a departure from an open one.

@@ -7,7 +7,7 @@
 #
 # Macro can contain any of the following attributes:
 #
-# :query    - RedisGraph query (see README.md). Has precedence over :template. Requires :writer to be defined.
+# :query    - FalkorDB query (see README.md). Has precedence over :template. Requires :writer to be defined.
 # :writer   - Writer is a (Ruby) expression used to format :query result set. Writer has precedence over :template.
 #             Object names can be marked with `name_of(value)`, or `namespaces_of(value)` for namespaces, which
 #             the dashboard renders in bold. Marking is optional; unmarked output is displayed as it is.
@@ -29,7 +29,7 @@ macros:
 # :group_title     - [Required] Title applying to all items falling under this risk check 
 # :severity        - [Required] Severity, as one of :danger, :warning, :info
 # :info            - [Required] Textual information about the check and suggestions on how to mitigate the risk
-# :query           - [Conditonal] RedisGraph query (see README.md). Has precedence over :template. Requires :writer to be defined.
+# :query           - [Conditonal] FalkorDB query (see README.md). Has precedence over :template. Requires :writer to be defined.
 # :writer          - [Conditonal] Writer is a Ruby expression used to format query result set. Writer has precedence over :template. Required :query to be defined.
 #                    Object names can be marked with `name_of(value)`, or `namespaces_of(value)` for namespaces, which the dashboard
 #                    renders in bold so they stand out from the surrounding words. Marking is optional.

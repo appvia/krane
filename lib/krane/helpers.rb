@@ -38,7 +38,7 @@ module Krane
     end
 
     def get_graph_client
-      Krane::Clients::RedisGraph.client cluster: get_cluster_slug
+      Krane::Clients::FalkorDB.client cluster: get_cluster_slug
     end
 
     def banner prefix, txt

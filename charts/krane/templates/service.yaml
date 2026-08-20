@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# RedisGraph
+# FalkorDB
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: redisgraph
+  name: falkordb
   labels:
     {{- include "krane.labels" . | nindent 4 }}
 spec:
@@ -27,7 +27,7 @@ spec:
     targetPort: 6379
     protocol: TCP
   selector:
-    {{- include "krane.redisgraphSelectorLabels" . | nindent 4 }}
+    {{- include "krane.falkordbSelectorLabels" . | nindent 4 }}
 
 # Krane
 ---

@@ -16,7 +16,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    io.appvia.krane/version: v0.1.4
+    io.appvia.krane/version: v0.1.5
     io.appvia.krane.service: krane
   name: krane
 spec:
@@ -41,13 +41,13 @@ spec:
           value: "30"
         - name: KRANE_REPORT_OUTPUT
           value: none
-        - name: REDIS_GRAPH_HOST
-          value: redisgraph
+        - name: FALKORDB_HOST
+          value: falkordb
         - name: SLACK_WEBHOOK_URL
           value: ""
         - name: SLACK_CHANNEL
           value: ""
-        image: quay.io/appvia/krane:v0.1.4
+        image: quay.io/appvia/krane:v0.1.5
         imagePullPolicy: "IfNotPresent"
         livenessProbe:
           exec:

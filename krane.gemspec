@@ -63,7 +63,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'kubeclient'
   spec.add_runtime_dependency 'memoist'
   spec.add_runtime_dependency 'openid_connect'
-  spec.add_runtime_dependency 'redisgraph'
+  spec.add_runtime_dependency 'redis'
   spec.add_runtime_dependency 'slack-notifier', '~> 2.2', '>= 2.2.2'
   spec.add_runtime_dependency 'webrick'
 end

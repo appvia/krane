@@ -16,27 +16,37 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    io.appvia.krane/version: v0.1.4
-    io.appvia.krane.service: redisgraph
-  name: redisgraph
+    io.appvia.krane/version: v0.1.5
+    io.appvia.krane.service: falkordb
+  name: falkordb
 spec:
   replicas: 1
   selector:
     matchLabels:
-      io.appvia.krane.service: redisgraph
+      io.appvia.krane.service: falkordb
   strategy: {}
   template:
     metadata:
       labels:
         io.appvia.krane.network/default: "true"
-        io.appvia.krane.service: redisgraph
+        io.appvia.krane.service: falkordb
     spec:
       containers:
-      - image: redislabs/redisgraph:2.6.1
+      - image: falkordb/falkordb:v4.20.3
         imagePullPolicy: "IfNotPresent"
-        name: redisgraph
+        name: falkordb
         ports:
         - containerPort: 6379
+        env:
+        # The image defaults cap result sets at 10k rows and read queries at 1s,
+        # which would silently truncate reports on a large cluster. Krane needs
+        # whole result sets, the way RedisGraph served them.
+        - name: FALKORDB_ARGS
+          value: "MAX_QUEUED_QUERIES 25 TIMEOUT_MAX 0 RESULTSET_SIZE -1"
+        # Krane talks to the graph directly, so the bundled web UI is dead
+        # weight - and it accounts for most of the idle memory footprint.
+        - name: BROWSER
+          value: "0"
         resources:
           limits:
             cpu: "1"

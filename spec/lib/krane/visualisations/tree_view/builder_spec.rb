@@ -20,7 +20,7 @@ describe Krane::Visualisations::TreeView::Builder do
     ]
   end
 
-  # Stands in for the RedisGraph client, handing back a fixed resultset.
+  # Stands in for the FalkorDB client, handing back a fixed resultset.
   def graph_returning *rows
     double(query: double(columns: columns, resultset: rows))
   end
@@ -28,7 +28,7 @@ describe Krane::Visualisations::TreeView::Builder do
   # The tree, without going near the graph or the filesystem: Writer is covered
   # separately, and the client is reached for in the constructor.
   def tree_for *rows
-    allow(Krane::Clients::RedisGraph).to receive(:client).and_return(graph_returning(*rows))
+    allow(Krane::Clients::FalkorDB).to receive(:client).and_return(graph_returning(*rows))
     described_class.new(OpenStruct.new(cluster: 'test', verbose: false)).send(:prepare_data)
   end
 
@@ -39,7 +39,7 @@ describe Krane::Visualisations::TreeView::Builder do
   describe '#prepare_data' do
 
     # The query used to carry an ORDER BY purely so that the facet hash came out
-    # in display order. RedisGraph pays for that sort in memory, so ordering is
+    # in display order. FalkorDB pays for that sort in memory, so ordering is
     # applied here instead - which only holds if it does not depend on the order
     # rows arrive in.
     context 'when the graph returns rows out of order' do
