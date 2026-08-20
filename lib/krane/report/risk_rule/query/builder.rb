@@ -26,8 +26,10 @@ module Krane
           #       so ONLY roles with intersecting matches will be selected
           #
           # NOTE: apiGroups are the one exception - their entries are alternatives (logical OR),
-          #       since a role rule names a single API group per resource, and the `*` wildcard
-          #       role rules use to mean "every API group" has to match too.
+          #       since a role rule names a single API group per resource.
+          #
+          # NOTE: the `*` wildcard a role rule grants in place of an API group, a resource or a verb
+          #       covers whatever the match rule names, so it is accepted alongside it.
           #
           # :match_rules example:
           #
@@ -55,8 +57,8 @@ module Krane
           # Example:
           #
           # [
-          #   {:type=>"resource", :api_groups=>["rbac.authorization.k8s.io", "*"], :resource=>"rolebindings", :verb=>"create"},
-          #   {:type=>"resource", :api_groups=>["rbac.authorization.k8s.io", "*"], :resource=>"roles", :verb=>"bind"}
+          #   {:type=>"resource", :api_group=>["rbac.authorization.k8s.io", "*"], :resource=>["rolebindings", "*"], :verb=>["create", "*"]},
+          #   {:type=>"resource", :api_group=>["rbac.authorization.k8s.io", "*"], :resource=>["roles", "*"], :verb=>["bind", "*"]}
           # ]
           #
           def build_rule_selectors item:
@@ -74,9 +76,9 @@ module Krane
             role_attrs = exclude_default_roles ? "{is_default: 'false'}" : ''
 
             rule_selectors.collect.with_index do |selector, index|
-              # :api_groups holds alternatives, which a node property map cannot express as it
-              # tests for equality - build_where matches those instead.
-              rule_selector = selector.except(:api_groups).map do |k,v|
+              # A list-valued attribute holds alternatives, which a node property map cannot express
+              # as it tests for equality - build_where matches those instead.
+              rule_selector = selector.reject {|_,v| v.is_a?(Array) }.map do |k,v|
                 "#{k}: '#{v}'"
               end.join(', ')
 
@@ -85,8 +87,10 @@ module Krane
           end
 
           # Builds graph query WHERE conditions for supplied list of selectors:
-          # - the API groups a matched role rule is allowed to name, one condition per selector
           # - the conditions tying every match of a multi-MATCH query to the same role
+          # - the alternatives a matched role rule may name for a list-valued attribute, which the
+          #   node property map of its MATCH cannot express
+          # - the exclusion of a role rule granting unrestricted access
           def build_where rule_selectors: []
             same_role = if rule_selectors.size > 1
               1.upto(rule_selectors.size-1).collect { |index| "ID(ro0) = ID(ro#{index})" }
@@ -94,12 +98,39 @@ module Krane
               []
             end
 
-            api_groups = rule_selectors.each_with_index.filter_map do |selector, index|
-              next if selector[:api_groups].blank?
-              "ru#{index}.api_group IN [#{selector[:api_groups].map {|g| "'#{g}'" }.join(', ')}]"
+            alternatives = rule_selectors.each_with_index.flat_map do |selector, index|
+              selector.select {|_,v| v.is_a?(Array) }.map do |attribute, values|
+                "ru#{index}.#{attribute} IN [#{values.map {|v| "'#{v}'" }.join(', ')}]"
+              end
             end
 
-            same_role + api_groups
+            same_role + alternatives + build_unrestricted_exclusions(rule_selectors: rule_selectors)
+          end
+
+          # Builds the conditions excluding a role rule that grants unrestricted access.
+          #
+          # Every verb on every resource of every API group is not one specific risk, it is a role
+          # that can do anything - which `unrestricted-cluster-wide-subjects` and
+          # `unrestricted-ns-level-subjects` already report in those words, for every subject it
+          # reaches. Accepting the wildcard in place of a named resource and verb would otherwise
+          # list such a role under every risky-role rule there is, burying the findings a reader can
+          # act on under one they cannot.
+          #
+          # A role rule naming an API group is NOT excluded, `core` included: it grants nothing
+          # outside that group, so the resources it does cover are worth naming. Those two templates
+          # additionally treat `core` as unrestricted, which is a fair reading of what a subject can
+          # reach through it, but it does not follow that every resource in the group goes unnamed.
+          #
+          # Only resource selectors need this: `nonResourceURLs` are matched as written, since RBAC
+          # matches a URL by prefix and `*` is only one of the patterns that can cover it.
+          def build_unrestricted_exclusions rule_selectors: []
+            rule_selectors.each_with_index.filter_map do |selector, index|
+              next unless selector.key?(:resource)
+
+              "NOT (ru#{index}.api_group = '#{RuleSelector::WILDCARD}' " \
+                "AND ru#{index}.resource = '#{RuleSelector::WILDCARD}' " \
+                "AND ru#{index}.verb = '#{RuleSelector::WILDCARD}')"
+            end
           end
 
         end

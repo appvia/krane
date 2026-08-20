@@ -43,7 +43,13 @@ macros:
 #                                     Note: values of a given attribute are matched together (logical AND), so a role
 #                                     only matches when it grants ALL of them. :apiGroups are the exception - a role rule
 #                                     names a single API group per resource, so their values are alternatives (logical
-#                                     OR) and the `*` group is always accepted alongside them.
+#                                     OR).
+#                                     Note: the `*` wildcard a role rule may grant in place of an API group, a resource
+#                                     or a verb covers whatever the match rule names, so it is accepted alongside it.
+#                                     A role rule granting every verb on every resource of the `*` API group is the
+#                                     one exception - `unrestricted-cluster-wide-subjects` and
+#                                     `unrestricted-ns-level-subjects` report that in the words that fit it. A rule
+#                                     naming an API group is not excluded, `core` included.
 #                                     Generated graph query returns the following columns: 
 #                                       * role_name
 #                                       * role_kind
