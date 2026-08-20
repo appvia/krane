@@ -6,6 +6,8 @@ RSpec.describe Krane::Report::RiskRule::Query::RuleSelector do
 
     context 'for resource specific rules' do
 
+      # API groups are alternatives: a role rule names one API group per resource, so a selector
+      # per group would build a query no role can satisfy. They stay on the selector as a list.
       context 'with apiGroups specified' do
 
         let(:attrs) do
@@ -16,9 +18,8 @@ RSpec.describe Krane::Report::RiskRule::Query::RuleSelector do
         end
 
         it 'returns expected array of selectors hashes' do
-          expect(subject.selectors).to include(
-            {:api_group=>"g1", :resource=>"r1", :type=>"resource"},
-            {:api_group=>"g2", :resource=>"r1", :type=>"resource"}
+          expect(subject.selectors).to eq(
+            [{:type=>"resource", :api_groups=>["g1", "g2", "*"], :resource=>"r1"}]
           )
         end
 
@@ -35,10 +36,59 @@ RSpec.describe Krane::Report::RiskRule::Query::RuleSelector do
 
         it 'returns expected array of selectors hashes' do
           expect(subject.selectors).to include(
-            {:api_group=>"g1", :resource=>"r1", :type=>"resource", :verb=>"get"},
-            {:api_group=>"g1", :resource=>"r1", :type=>"resource", :verb=>"list"},
-            {:api_group=>"g2", :resource=>"r1", :type=>"resource", :verb=>"get"},
-            {:api_group=>"g2", :resource=>"r1", :type=>"resource", :verb=>"list"}
+            {:type=>"resource", :api_groups=>["g1", "g2", "*"], :resource=>"r1", :verb=>"get"},
+            {:type=>"resource", :api_groups=>["g1", "g2", "*"], :resource=>"r1", :verb=>"list"}
+          )
+        end
+
+      end
+
+      context 'with the core apiGroup specified' do
+
+        let(:attrs) do
+          {
+            apiGroups: [''],
+            resources: ['secrets']
+          }
+        end
+
+        it 'matches the `core` group the graph stores for it' do
+          expect(subject.selectors).to eq(
+            [{:type=>"resource", :api_groups=>["core", "*"], :resource=>"secrets"}]
+          )
+        end
+
+      end
+
+      context 'with the wildcard apiGroup specified' do
+
+        let(:attrs) do
+          {
+            apiGroups: ['*'],
+            resources: ['*']
+          }
+        end
+
+        it 'matches the wildcard group only' do
+          expect(subject.selectors).to eq(
+            [{:type=>"resource", :api_groups=>["*"], :resource=>"*"}]
+          )
+        end
+
+      end
+
+      context 'without apiGroups specified' do
+
+        let(:attrs) do
+          {
+            resources: ['r1'],
+            verbs: ['get']
+          }
+        end
+
+        it 'leaves the API group unconstrained' do
+          expect(subject.selectors).to eq(
+            [{:type=>"resource", :resource=>"r1", :verb=>"get"}]
           )
         end
 

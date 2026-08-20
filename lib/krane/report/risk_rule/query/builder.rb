@@ -25,9 +25,13 @@ module Krane
           # NOTE: Multiple :match_rules will be evaluated with logical AND
           #       so ONLY roles with intersecting matches will be selected
           #
+          # NOTE: apiGroups are the one exception - their entries are alternatives (logical OR),
+          #       since a role rule names a single API group per resource, and the `*` wildcard
+          #       role rules use to mean "every API group" has to match too.
+          #
           # :match_rules example:
           #
-          # - apiGroups: ['*', 'core']
+          # - apiGroups: ['rbac.authorization.k8s.io']
           #   resources: ['rolebindings', 'pods']
           #   verbs: ['patch', 'get']
           # - nonResourceURLs: ['/healthz']
@@ -51,8 +55,8 @@ module Krane
           # Example:
           #
           # [
-          #   {:type=>"resource", :api_group=>"rbac.authorization.k8s.io", :resource=>"rolebindings", :verb=>"create"},
-          #   {:type=>"resource", :api_group=>"rbac.authorization.k8s.io", :resource=>"roles", :verb=>"bind"}
+          #   {:type=>"resource", :api_groups=>["rbac.authorization.k8s.io", "*"], :resource=>"rolebindings", :verb=>"create"},
+          #   {:type=>"resource", :api_groups=>["rbac.authorization.k8s.io", "*"], :resource=>"roles", :verb=>"bind"}
           # ]
           #
           def build_rule_selectors item:
@@ -70,21 +74,32 @@ module Krane
             role_attrs = exclude_default_roles ? "{is_default: 'false'}" : ''
 
             rule_selectors.collect.with_index do |selector, index|
-              rule_selector = selector.map do |k,v|
+              # :api_groups holds alternatives, which a node property map cannot express as it
+              # tests for equality - build_where matches those instead.
+              rule_selector = selector.except(:api_groups).map do |k,v|
                 "#{k}: '#{v}'"
               end.join(', ')
 
-              "MATCH (ns:Namespace)<-[:SCOPE]-(ro#{index}:Role #{role_attrs})<-[:GRANT]-(:Rule {#{rule_selector}})"
+              "MATCH (ns:Namespace)<-[:SCOPE]-(ro#{index}:Role #{role_attrs})<-[:GRANT]-(ru#{index}:Rule {#{rule_selector}})"
             end
           end
 
-          # Builds graph query WHERE condition for multi-MATCH queries
+          # Builds graph query WHERE conditions for supplied list of selectors:
+          # - the API groups a matched role rule is allowed to name, one condition per selector
+          # - the conditions tying every match of a multi-MATCH query to the same role
           def build_where rule_selectors: []
-            return [] if rule_selectors.size == 1
-
-            0.upto(rule_selectors.size-2).collect do |index|
-              "ID(ro0) = ID(ro#{index+1})"
+            same_role = if rule_selectors.size > 1
+              1.upto(rule_selectors.size-1).collect { |index| "ID(ro0) = ID(ro#{index})" }
+            else
+              []
             end
+
+            api_groups = rule_selectors.each_with_index.filter_map do |selector, index|
+              next if selector[:api_groups].blank?
+              "ru#{index}.api_group IN [#{selector[:api_groups].map {|g| "'#{g}'" }.join(', ')}]"
+            end
+
+            same_role + api_groups
           end
 
         end

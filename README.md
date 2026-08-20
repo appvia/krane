@@ -372,10 +372,13 @@ Rule can contain any of the following attributes:
   - Example:
     ```yaml
      match_rules:
-     - resources: ['cronjobs']
+     - apiGroups: ['batch']
+       resources: ['cronjobs']
        verbs: ['update']
     ```
      Attributes and values follow [Kubernetes RBAC role specification](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-examples).
+
+     Values of a given attribute are matched together (logical AND), so a role only matches when it grants all of them. `apiGroups` are the exception - a role rule names a single API group per resource, so their values are matched as alternatives (logical OR), and the `*` API group is always accepted alongside them. Omitting `apiGroups` matches a role rule naming *any* API group, which for a resource that exists in one group only (or for the `*` resource) reports a wider scope than the role actually grants.
 
 - `custom_params` [Optional] Map of custom key-value pairs to be evaluated and replaced in a rule `query` and `writer` representation.
   - Example:
@@ -447,7 +450,8 @@ Built-in templates simplify risk rule definition significantly, however, they ar
   info: Roles/ClusterRoles allowing all actions on secrets. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['secrets']
+  - apiGroups: ['']
+    resources: ['secrets']
     verbs: ['*']
 ```
 

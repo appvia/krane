@@ -59,6 +59,46 @@ RSpec.describe 'the shipped risk rules' do
     expect(unresolvable).to be_empty
   end
 
+  # Issue #80: a match rule that names no apiGroups matches a role rule naming ANY API group,
+  # so a `*` resource scoped to one CRD group was reported as access to every resource, and a
+  # `secrets` rule matched a CRD of the same name in an unrelated group.
+  it 'scopes every match rule to the API groups its resources live in' do
+    unscoped = Krane::Config::Risk.new.rules.each_with_object({}) do |rule, hsh|
+      found = rule[:match_rules].to_a.reject do |match_rule|
+        # Non-resource URL rules are not part of any API group.
+        match_rule[:nonResourceURLs].present? || match_rule[:apiGroups].present?
+      end
+
+      hsh[rule[:id]] = found if found.any?
+    end
+
+    expect(unscoped).to be_empty
+  end
+
+  describe 'risky-any-resource-get' do
+
+    subject { rule('risky-any-resource-get') }
+
+    # The rule reported in issue #80. `*` resources within a single API group is what every
+    # operator's own ClusterRole grants, and is not access to all resources.
+    it 'only matches a rule granting the wildcard API group' do
+      expect(subject[:query]).to include %q(ru0.api_group IN ['*'])
+    end
+
+  end
+
+  describe 'risky-get-secrets' do
+
+    subject { rule('risky-get-secrets') }
+
+    # `''` in the rule definition, `core` in the graph - and a role rule granting every API
+    # group grants the core one too.
+    it 'matches a rule granting the core API group, or every API group' do
+      expect(subject[:query]).to include %q(ru0.api_group IN ['core', '*'])
+    end
+
+  end
+
   # A finding's items are marker-rendered, so `name_of(...)` becomes bold in the dashboard. Its
   # `info` is not - FindingCard.vue interpolates it as plain text - so a backtick written there
   # reaches the user as a literal character.
