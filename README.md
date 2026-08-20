@@ -642,3 +642,22 @@ Author:  Marcin Ciszak <marcin.ciszak@appvia.io>
 Copyright (c) 2019-2020 [Appvia Ltd](https://appvia.io)
 
 This project is distributed under the [Apache License, Version 2.0](./LICENSE).
+
+### A note on the graph database
+
+_Krane_ stores its RBAC graph in [FalkorDB](https://github.com/FalkorDB/FalkorDB), which is licensed under the
+[Server Side Public License v1](https://github.com/FalkorDB/FalkorDB/blob/master/LICENSE) (SSPL). SSPL is a
+source-available licence, not an OSI-approved open source one. _Krane_ itself remains Apache-2.0: it contains no
+FalkorDB code and does not redistribute it. FalkorDB runs as a separate process that _Krane_ talks to over the Redis
+wire protocol, and the container image is pulled from Docker Hub at deploy time.
+
+For the overwhelming majority of users this changes nothing. SSPL places no conditions on *running* the database -
+including inside a company, on internal clusters, for colleagues. Its one obligation (section 13) is triggered by
+offering the database's functionality *to third parties as a service*, which is not what _Krane_ does.
+
+The case worth thinking about is offering a hosted _Krane_ as a commercial service to external customers. Section 13
+defines the source you would then have to publish broadly enough to reach surrounding management and monitoring
+software, and it has never been tested in court. If that is your plan, take your own legal advice.
+
+_Krane_ previously used RedisGraph, which was itself source-available under the Redis Source Available License, so
+this is a change of restrictive licence rather than a departure from an open one.
