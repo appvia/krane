@@ -59,6 +59,15 @@ RSpec.describe 'the shipped risk rules' do
     expect(unresolvable).to be_empty
   end
 
+  # A finding's items are marker-rendered, so `name_of(...)` becomes bold in the dashboard. Its
+  # `info` is not - FindingCard.vue interpolates it as plain text - so a backtick written there
+  # reaches the user as a literal character.
+  it 'marks no names in rule info text' do
+    marked = resolved.select { |item| item[:info].to_s.include?('`') }.map { |item| item[:id] }
+
+    expect(marked).to be_empty
+  end
+
   describe 'unauthenticated-subject-access' do
 
     subject { rule('unauthenticated-subject-access') }

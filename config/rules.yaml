@@ -96,9 +96,9 @@ rules:
   group_title: Subjects granting access to unauthenticated callers
   severity: :danger
   info: |
-    Access has been granted to an unauthenticated identity. `system:anonymous` is the identity the
+    Access has been granted to an unauthenticated identity. system:anonymous is the identity the
     API server assigns to requests that carry no credentials, and every such request is also a member
-    of the `system:unauthenticated` group. Any permission reachable through these subjects is available
+    of the system:unauthenticated group. Any permission reachable through these subjects is available
     to anyone who can reach the API server. Review the bindings below and remove them.
   # Unlike the subject rules below this one deliberately does NOT filter on `is_default`, because the
   # default ClusterRoles (cluster-admin, admin, edit, view, system:*) are exactly the ones an
