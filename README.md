@@ -302,7 +302,8 @@ or when its name begins with a prefix the provider has reserved: `eks:`, `aws-no
 (OpenShift).
 
 To audit vendor RBAC as well, set `TREAT_VENDOR_MANAGED_ROLES_AS_DEFAULT=false` — vendor roles are then judged
-like any other, while Kubernetes' own defaults stay excluded. Setting
+like any other, while Kubernetes' own defaults stay excluded. The Helm chart exposes this as
+`params.treatVendorManagedRolesAsDefault`. Setting
 `RISK_RULE_QUERY_EXCLUDE_DEFAULT_ROLES=false` goes further and brings both back into the role oriented rules.
 In the other direction, individual roles can be exempted by name through `whitelist_role_names` in the
 [Whitelist](config/whitelist.yaml).
@@ -512,6 +513,7 @@ You may control certain aspects of in-cluster execution with the following envir
 
 * `KRANE_REPORT_INTERVAL` - Defines interval in seconds for RBAC static analysis report run. Default: `300` (in seconds, i.e. 5 minutes).
 * `KRANE_REPORT_OUTPUT` - Defines RBAC risk report output format. Possible values `:json`, `:yaml`, `:none`. Default: `:json`.
+* `TREAT_VENDOR_MANAGED_ROLES_AS_DEFAULT` - Whether RBAC installed by a managed control plane is skipped by the risk rules, along with the Kubernetes defaults. See [Default and vendor managed roles](#default-and-vendor-managed-roles). Default: `true`.
 
 ### Local or Remote K8s Cluster
 
