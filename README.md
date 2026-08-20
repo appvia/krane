@@ -655,9 +655,5 @@ For the overwhelming majority of users this changes nothing. SSPL places no cond
 including inside a company, on internal clusters, for colleagues. Its one obligation (section 13) is triggered by
 offering the database's functionality *to third parties as a service*, which is not what _Krane_ does.
 
-The case worth thinking about is offering a hosted _Krane_ as a commercial service to external customers. Section 13
-defines the source you would then have to publish broadly enough to reach surrounding management and monitoring
-software, and it has never been tested in court. If that is your plan, take your own legal advice.
-
 _Krane_ previously used RedisGraph, which was itself source-available under the Redis Source Available License, so
 this is a change of restrictive licence rather than a departure from an open one.
