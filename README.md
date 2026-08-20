@@ -280,6 +280,36 @@ Note: Example query above will select all Subjects with assigned Roles/ClusterRo
 RBAC risk rules are defined in the [Rules](config/rules.yaml) file. The structure of each rule is largely self-explanatory.
 Built-in set can be expanded / overridden by adding extra custom rules to the [Cutom Rules](config/custom-rules.yaml) file.
 
+#### Unauthenticated access
+
+Most built-in rules judge a subject by the permissions it holds. The `unauthenticated-subject-access` rule
+judges it by *who it is*: any binding to `system:anonymous` (the identity the API server assigns to requests
+carrying no credentials) or to the `system:unauthenticated` group is reported as a `danger`, whatever the
+bound role grants.
+
+Two things make this rule behave differently to the others, both tunable through its `custom_params`:
+
+- It does **not** skip Kubernetes' own default roles. Every other subject rule filters them out, but
+  `cluster-admin`, `admin`, `edit`, `view` and the `system:*` ClusterRoles are precisely what an accidental
+  anonymous binding tends to reference, and the most damaging when it does.
+- It excludes, via `baseline_role_names`, the anonymous access a cluster legitimately ships with, so that
+  anything reported is worth acting on: `system:public-info-viewer`, bound to `system:unauthenticated` to
+  serve `/healthz`, `/livez`, `/readyz` and `/version`; and `kubeadm:bootstrap-signer-clusterinfo`, bound to
+  `system:anonymous` to serve the `cluster-info` ConfigMap that `kubeadm join` discovery reads.
+
+To report that baseline access too, empty the list in [Custom Rules](config/custom-rules.yaml):
+
+```yaml
+rules:
+- id: unauthenticated-subject-access
+  custom_params:
+    baseline_role_names: []
+```
+
+The same mechanism widens the check — add `system:authenticated` to `unauthenticated_subject_names` to also
+report permissions available to every authenticated principal. Roles listed under `whitelist_role_names` in
+the [Whitelist](config/whitelist.yaml) are excluded as well, for cluster-specific exceptions.
+
 #### Risk Rule Macros
 
 Macros are "containers" for a set of common/shared attributes, and referenced by one or more risk rules. If you choose to use macro in a given risk rule you would need to reference it by name, e.g. `macro: <macro-name>`. Note that attributes defined in referenced `macro` will take precedence over the same attributes defined on the rule level.
@@ -319,14 +349,15 @@ Rule can contain any of the following attributes:
     ```
      Attributes and values follow [Kubernetes RBAC role specification](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-examples).
 
-- `custom_params` [Optional] List of custom key-value pairs to be evaluated and replaced in a rule `query` and `writer` representation.
+- `custom_params` [Optional] Map of custom key-value pairs to be evaluated and replaced in a rule `query` and `writer` representation.
   - Example:
     ```yaml
     custom_params:
-    - attrA: valueA
-    - attrB: valueB
+      attrA: valueA
+      attrB: valueB
+      attrC: ['valueC1', 'valueC2']
     ```
-    Template placeholders for the keys above `{{attrA}}` and `{{attrB}}` will be replaced with `valueA` and `valueB` respectively.
+    Template placeholders for the keys above `{{attrA}}`, `{{attrB}}` and `{{attrC}}` will be replaced with `valueA`, `valueB` and `["valueC1", "valueC2"]` respectively. A list value is rendered as a CypherQL list, so it can be used directly with an `IN` predicate.
 
 - `threshold`  [Optional] Numeric value. When definied this will become available as template placeholder `{{threshold}}` in the `writer` expression.
 - `macro`      [Optional] Reference to common parameters defined in a named macro.

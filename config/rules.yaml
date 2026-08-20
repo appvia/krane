@@ -50,11 +50,11 @@ macros:
 #                      - resources: ['cronjobs']
 #                        verbs: ['update']
 
-# :custom_params   - List of custom key-value pairs to be replaced in resolved :query / :writer.
+# :custom_params   - Map of custom key-value pairs to be replaced in resolved :query / :writer.
 #                    Example: 
 #                      custom_params:
-#                      - attrA: valueA
-#                      - attrB: valueB
+#                        attrA: valueA
+#                        attrB: valueB
 
 #                    Templated placeholders for keys above `{{attrA}}` and `{{attrB}}` will be replaced with `valueA` and `valueB` respectively.
 
@@ -91,6 +91,44 @@ rules:
 #
 # ==== End Example Rule ====
 #
+
+- id: unauthenticated-subject-access
+  group_title: Subjects granting access to unauthenticated callers
+  severity: :danger
+  info: |
+    Access has been granted to an unauthenticated identity. `system:anonymous` is the identity the
+    API server assigns to requests that carry no credentials, and every such request is also a member
+    of the `system:unauthenticated` group. Any permission reachable through these subjects is available
+    to anyone who can reach the API server. Review the bindings below and remove them.
+  # Unlike the subject rules below this one deliberately does NOT filter on `is_default`, because the
+  # default ClusterRoles (cluster-admin, admin, edit, view, system:*) are exactly the ones an
+  # anonymous binding is most likely to reference, and are the most damaging when it does.
+  # :baseline_role_names excludes the anonymous access every cluster ships with, so that what is left
+  # is always actionable: `system:public-info-viewer` (bound to `system:unauthenticated` to serve
+  # /healthz, /livez, /readyz and /version) and `kubeadm:bootstrap-signer-clusterinfo` (bound to
+  # `system:anonymous` to serve the `cluster-info` ConfigMap that `kubeadm join` discovery reads).
+  # Empty this list to also report those; override either list via config/custom-rules.yaml.
+  custom_params:
+    unauthenticated_subject_names: ['system:anonymous', 'system:unauthenticated']
+    baseline_role_names: ['system:public-info-viewer', 'kubeadm:bootstrap-signer-clusterinfo']
+  query: |
+    MATCH
+      (ro:Role {defined: 'true'})<-[:ASSIGN]-(s:Subject)
+    WHERE
+      s.name IN {{unauthenticated_subject_names}}
+      AND NOT ro.name IN {{baseline_role_names}}
+      AND NOT ro.name IN {{whitelist_role_names}}
+    RETURN
+      s.kind as subject_kind,
+      s.name as subject_name,
+      ro.kind as role_kind,
+      ro.name as role_name
+    ORDER BY
+      subject_name,
+      role_kind,
+      role_name
+  writer: |
+    "#{result.subject_kind} #{name_of(result.subject_name)} is bound to #{result.role_kind} #{name_of(result.role_name)}"
 
 - id: subjects-with-privileged-psp-not-scoped-to-ns
   group_title: Subjects with privileged PSP access NOT scoped to a namespace (N/A for K8s version >= 1.25)
