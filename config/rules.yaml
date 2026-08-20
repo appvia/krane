@@ -40,6 +40,10 @@ macros:
 #                      - risky-role : Builds multi-match graph query based on the access rule specified in :match_rules.
 #                                     Attributes and values in :match_rule follow Kubernetes spec at:
 #                                       * https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-examples
+#                                     Note: values of a given attribute are matched together (logical AND), so a role
+#                                     only matches when it grants ALL of them. :apiGroups are the exception - a role rule
+#                                     names a single API group per resource, so their values are alternatives (logical
+#                                     OR) and the `*` group is always accepted alongside them.
 #                                     Generated graph query returns the following columns: 
 #                                       * role_name
 #                                       * role_kind
@@ -47,7 +51,8 @@ macros:
 # :match_rules     - [Conditonal] Required when :template relies on match rules in order to build a query.
 #                    Example:
 #                      match_rules:
-#                      - resources: ['cronjobs']
+#                      - apiGroups: ['batch']
+#                        resources: ['cronjobs']
 #                        verbs: ['update']
 
 # :custom_params   - Map of custom key-value pairs to be replaced in resolved :query / :writer.
@@ -197,7 +202,8 @@ rules:
   info: Roles/ClusterRoles allowing to view specific secrets. This can be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['secrets']
+  - apiGroups: ['']
+    resources: ['secrets']
     verbs: ['get']
 
 - id: risky-list-secrets
@@ -206,7 +212,8 @@ rules:
   info: Roles/ClusterRoles allowing to list all secrets. This can be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['secrets']
+  - apiGroups: ['']
+    resources: ['secrets']
     verbs: ['list']
 
 # Impersonation
@@ -217,7 +224,8 @@ rules:
   info: Roles/ClusterRoles allowing to impersonate privileged groups. This is dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['groups']
+  - apiGroups: ['']
+    resources: ['groups']
     verbs: ['impersonate']
 
 # All actions (*) on specific resource
@@ -228,7 +236,8 @@ rules:
   info: Roles/ClusterRoles allowing all actions on secrets. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['secrets']
+  - apiGroups: ['']
+    resources: ['secrets']
     verbs: ['*']
 
 - id: risky-any-verb-pods
@@ -237,7 +246,8 @@ rules:
   info: Roles/ClusterRoles allowing all actions on pods. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['pods']
+  - apiGroups: ['']
+    resources: ['pods']
     verbs: ['*']
 
 - id: risky-any-verb-deployments
@@ -246,7 +256,8 @@ rules:
   info: Roles/ClusterRoles allowing all actions on deployments. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['deployments']
+  - apiGroups: ['apps']
+    resources: ['deployments']
     verbs: ['*']
 
 - id: risky-any-verb-daemonsets
@@ -255,7 +266,8 @@ rules:
   info: Roles/ClusterRoles allowing all actions on daemonsets. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['daemonsets']
+  - apiGroups: ['apps']
+    resources: ['daemonsets']
     verbs: ['*']
 
 - id: risky-any-verb-statefulsets
@@ -264,7 +276,8 @@ rules:
   info: Roles/ClusterRoles allowing all actions on statefulsets. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['statefulsets']
+  - apiGroups: ['apps']
+    resources: ['statefulsets']
     verbs: ['*']
 
 - id: risky-any-verb-replicationcontrollers
@@ -273,7 +286,8 @@ rules:
   info: Roles/ClusterRoles allowing all actions on replicationcontrollers. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['replicationcontrollers']
+  - apiGroups: ['']
+    resources: ['replicationcontrollers']
     verbs: ['*']
 
 - id: risky-any-verb-replicasets
@@ -282,7 +296,8 @@ rules:
   info: Roles/ClusterRoles allowing all actions on replicasets. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['replicasets']
+  - apiGroups: ['apps']
+    resources: ['replicasets']
     verbs: ['*']
 
 - id: risky-any-verb-cronjobs
@@ -291,7 +306,8 @@ rules:
   info: Roles/ClusterRoles allowing all actions on cronjobs. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['cronjobs']
+  - apiGroups: ['batch']
+    resources: ['cronjobs']
     verbs: ['*']
 
 - id: risky-any-verb-jobs
@@ -300,7 +316,8 @@ rules:
   info: Roles/ClusterRoles allowing all actions on jobs. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['jobs']
+  - apiGroups: ['batch']
+    resources: ['jobs']
     verbs: ['*']
 
 - id: risky-any-verb-roles
@@ -309,7 +326,8 @@ rules:
   info: Roles/ClusterRoles allowing all actions on roles. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['roles']
+  - apiGroups: ['rbac.authorization.k8s.io']
+    resources: ['roles']
     verbs: ['*']
 
 - id: risky-any-verb-clusterroles
@@ -318,7 +336,8 @@ rules:
   info: Roles/ClusterRoles allowing all actions on clusterroles. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['clusterroles']
+  - apiGroups: ['rbac.authorization.k8s.io']
+    resources: ['clusterroles']
     verbs: ['*']
 
 - id: risky-any-verb-rolebindings
@@ -327,7 +346,8 @@ rules:
   info: Roles/ClusterRoles allowing all actions on rolebindings. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['rolebindings']
+  - apiGroups: ['rbac.authorization.k8s.io']
+    resources: ['rolebindings']
     verbs: ['*']
 
 - id: risky-any-verb-clusterrolebindings
@@ -336,7 +356,8 @@ rules:
   info: Roles/ClusterRoles allowing all actions on clusterrolebindings. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['clusterrolebindings']
+  - apiGroups: ['rbac.authorization.k8s.io']
+    resources: ['clusterrolebindings']
     verbs: ['*']
 
 - id: risky-any-verb-users
@@ -345,7 +366,8 @@ rules:
   info: "Roles/ClusterRoles allowing all actions on users. This might be dangerous. Review listed Roles!"
   template: risky-role
   match_rules:
-  - resources: ['users']
+  - apiGroups: ['']
+    resources: ['users']
     verbs: ['*']
 
 - id: risky-any-verb-groups
@@ -354,7 +376,8 @@ rules:
   info: Roles/ClusterRoles allowing all actions on groups. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['groups']
+  - apiGroups: ['']
+    resources: ['groups']
     verbs: ['*']
 
 # Specific action on all (*) resources
@@ -365,7 +388,8 @@ rules:
   info: Roles/ClusterRoles allowing delete action on all resources. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['*']
+  - apiGroups: ['*']
+    resources: ['*']
     verbs: ['delete']
 
 - id: risky-any-resource-deletecollection
@@ -374,7 +398,8 @@ rules:
   info: Roles/ClusterRoles allowing deletecollection action on all resources. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['*']
+  - apiGroups: ['*']
+    resources: ['*']
     verbs: ['deletecollection']
 
 - id: risky-any-resource-create
@@ -383,7 +408,8 @@ rules:
   info: Roles/ClusterRoles allowing create action on all resources. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['*']
+  - apiGroups: ['*']
+    resources: ['*']
     verbs: ['create']
 
 - id: risky-any-resource-list
@@ -392,7 +418,8 @@ rules:
   info: Roles/ClusterRoles allowing list action on all resources. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['*']
+  - apiGroups: ['*']
+    resources: ['*']
     verbs: ['list']
 
 - id: risky-any-resource-get
@@ -401,7 +428,8 @@ rules:
   info: Roles/ClusterRoles allowing get action on all resources. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['*']
+  - apiGroups: ['*']
+    resources: ['*']
     verbs: ['get']
 
 - id: risky-any-resource-impersonate
@@ -410,7 +438,8 @@ rules:
   info: Roles/ClusterRoles allowing impersonate action on all resources. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['*']
+  - apiGroups: ['*']
+    resources: ['*']
     verbs: ['impersonate']
 
 # Malicious pod
@@ -421,7 +450,8 @@ rules:
   info: Roles/ClusterRoles allowing to create a potentially malicious pod. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['deployments']
+  - apiGroups: ['apps']
+    resources: ['deployments']
     verbs: ['create']
 
 - id: risky-update-deployments
@@ -430,7 +460,8 @@ rules:
   info: Roles/ClusterRoles allowing to update a potentially malicious pod. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['deployments']
+  - apiGroups: ['apps']
+    resources: ['deployments']
     verbs: ['update']
 
 - id: risky-create-daemonsets
@@ -439,7 +470,8 @@ rules:
   info: Roles/ClusterRoles allowing to create a potentially malicious daemonset. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['daemonsets']
+  - apiGroups: ['apps']
+    resources: ['daemonsets']
     verbs: ['create']
 
 - id: risky-update-daemonsets
@@ -448,7 +480,8 @@ rules:
   info: Roles/ClusterRoles allowing to update a potentially malicious daemonset. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['daemonsets']
+  - apiGroups: ['apps']
+    resources: ['daemonsets']
     verbs: ['update']
 
 - id: risky-create-statefulsets
@@ -457,7 +490,8 @@ rules:
   info: Roles/ClusterRoles allowing to create a potentially malicious statefulset. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['statefulsets']
+  - apiGroups: ['apps']
+    resources: ['statefulsets']
     verbs: ['create']
 
 - id: risky-update-statefulsets
@@ -466,7 +500,8 @@ rules:
   info: Roles/ClusterRoles allowing to update a potentially malicious statefulset. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['statefulsets']
+  - apiGroups: ['apps']
+    resources: ['statefulsets']
     verbs: ['update']
 
 - id: risky-create-replicationcontrollers
@@ -475,7 +510,8 @@ rules:
   info: Roles/ClusterRoles allowing to create a potentially malicious replicationcontroller. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['replicationcontrollers']
+  - apiGroups: ['']
+    resources: ['replicationcontrollers']
     verbs: ['create']
 
 - id: risky-update-replicationcontrollers
@@ -484,7 +520,8 @@ rules:
   info: Roles/ClusterRoles allowing to update a potentially malicious replicationcontroller. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['replicationcontrollers']
+  - apiGroups: ['']
+    resources: ['replicationcontrollers']
     verbs: ['update']
 
 - id: risky-create-replicasets
@@ -493,7 +530,8 @@ rules:
   info: Roles/ClusterRoles allowing to create a potentially malicious replicaset. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['replicasets']
+  - apiGroups: ['apps']
+    resources: ['replicasets']
     verbs: ['create']
 
 - id: risky-update-replicasets
@@ -502,7 +540,8 @@ rules:
   info: Roles/ClusterRoles allowing to update a potentially malicious replicaset. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['replicasets']
+  - apiGroups: ['apps']
+    resources: ['replicasets']
     verbs: ['update']
 
 - id: risky-create-jobs
@@ -511,7 +550,8 @@ rules:
   info: Roles/ClusterRoles allowing to create a potentially malicious job. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['jobs']
+  - apiGroups: ['batch']
+    resources: ['jobs']
     verbs: ['create']
 
 - id: risky-update-jobs
@@ -520,7 +560,8 @@ rules:
   info: Roles/ClusterRoles allowing to update a potentially malicious job. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['jobs']
+  - apiGroups: ['batch']
+    resources: ['jobs']
     verbs: ['update']
 
 - id: risky-create-cronjobs
@@ -529,7 +570,8 @@ rules:
   info: Roles/ClusterRoles allowing to create a potentially malicious cronjob. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['cronjobs']
+  - apiGroups: ['batch']
+    resources: ['cronjobs']
     verbs: ['create']
 
 - id: risky-update-cronjobs
@@ -538,7 +580,8 @@ rules:
   info: Roles/ClusterRoles allowing to update a potentially malicious cronjob. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['cronjobs']
+  - apiGroups: ['batch']
+    resources: ['cronjobs']
     verbs: ['update']
 
 # Multiple permissions simulaneously
@@ -587,9 +630,11 @@ rules:
   info: Roles allow exec into running container. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['pods/exec']
+  - apiGroups: ['']
+    resources: ['pods/exec']
     verbs: ['create']
-  - resources: ['pods']
+  - apiGroups: ['']
+    resources: ['pods']
     verbs: ['get']
 
 - id: risky-attach-pods 
@@ -598,9 +643,11 @@ rules:
   info: Roles allow attaching to a running container. This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['pods/attach']
+  - apiGroups: ['']
+    resources: ['pods/attach']
     verbs: ['create']
-  - resources: ['pods']
+  - apiGroups: ['']
+    resources: ['pods']
     verbs: ['get']
 
 # Low priority
@@ -611,5 +658,6 @@ rules:
   info: This might be dangerous. Review listed Roles!
   template: risky-role
   match_rules:
-  - resources: ['rolebindings']
+  - apiGroups: ['rbac.authorization.k8s.io']
+    resources: ['rolebindings']
     verbs: ['patch', 'get']
