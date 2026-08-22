@@ -55,6 +55,14 @@ module Krane
               end
             end
 
+            # Edges left out of the graph because an endpoint was never buffered as a
+            # node. Populated by #edge_statements.
+            #
+            # @return [Array<Edge>]
+            def skipped_edges
+              @skipped_edges ||= []
+            end
+
             # Maps graph buffer RBAC edges to network representation
             # 
             # @return [Array]
@@ -67,15 +75,24 @@ module Krane
             # Buffered edges keyed by the node kinds they connect, the relation and its
             # direction, mapping to the pairs of node labels related that way.
             #
-            # Edges whose endpoints were never buffered as nodes are dropped - there is
-            # nothing in the graph for them to attach to.
+            # An edge whose endpoint was never buffered as a node is recorded in
+            # #skipped_edges and left out. It means the cluster's RBAC refers to
+            # something it never defines - a role granting use of a PodSecurityPolicy
+            # that does not exist, say. The single CREATE this replaced turned such an
+            # endpoint into a node with no label and no properties, which every query
+            # binds its nodes by label and so none of them could ever match.
             #
             # @return [Hash]
             def grouped_edges
+              @skipped_edges = []
+
               @edge_buffer.each_with_object(Hash.new {|h,k| h[k] = [] }) do |e, grouped|
                 source_kind      = node_kind_lookup[e.source_label]
                 destination_kind = node_kind_lookup[e.destination_label]
-                next unless source_kind && destination_kind
+                if source_kind.nil? || destination_kind.nil?
+                  @skipped_edges << e
+                  next
+                end
 
                 e.directions.each do |direction|
                   grouped[[source_kind, e.relation, destination_kind, direction]] <<

@@ -153,6 +153,7 @@ RSpec.describe Krane::Rbac::Ingest do
           node_statements: node_statements,
           edge_statements: edge_statements,
           node_kinds: [:Role, :Namespace],
+          skipped_edges: [],
           undefined_roles: ['set of undefined roles'],
           unused_roles: ['set of unused roles'],
           bindings_without_subject: ['set of bindings without subject'],
@@ -225,7 +226,8 @@ RSpec.describe Krane::Rbac::Ingest do
         double( :graph,
           node_statements: ['CREATE (:Role {_id:\'n1\'})'],
           edge_statements: [],
-          node_kinds:      [:Role]
+          node_kinds:      [:Role],
+          skipped_edges:   []
         )
       end
       let(:options) { OpenStruct.new(cluster: :default) }
@@ -258,6 +260,43 @@ RSpec.describe Krane::Rbac::Ingest do
           expect { @instance.send(:create_graph, graph) }.to raise_error(
             Krane::Clients::FalkorDB::Graph::QueryError, 'boom'
           )
+        end
+
+        # Whatever went wrong with the ingest is the useful diagnostic. A tidy up that
+        # fails in turn - the graph has gone away with the connection, say - must not
+        # take its place.
+        it 'keeps the original failure when discarding the graph fails too' do
+          allow(graph_client).to receive(:delete).and_raise(Redis::CannotConnectError, 'gone')
+
+          expect { @instance.send(:create_graph, graph) }.to raise_error(
+            Krane::Clients::FalkorDB::Graph::QueryError, 'boom'
+          )
+        end
+
+      end
+
+      # A dangling RBAC reference produces one of these. It is left out of the graph,
+      # which the operator should hear about rather than have passed over.
+      context 'when an edge refers to an entity the cluster never defines' do
+
+        let(:skipped) { [build(:edge, :security)] }
+
+        before do
+          allow(graph).to receive(:skipped_edges) { skipped }
+          allow(graph_client).to receive(:query)
+        end
+
+        it 'says so' do
+          expect(@instance).to receive(:banner).with(:warn, /Left 1 graph edge\(s\) out.*SECURITY x1/)
+
+          @instance.send(:create_graph, graph)
+        end
+
+        it 'still ingests the rest of the graph' do
+          allow(@instance).to receive(:banner)
+          expect(graph_client).to receive(:query).with('CREATE (:Role {_id:\'n1\'})')
+
+          @instance.send(:create_graph, graph)
         end
 
       end

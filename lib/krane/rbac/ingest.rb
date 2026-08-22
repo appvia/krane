@@ -106,6 +106,8 @@ module Krane
                          "in #{node_statements.size} node and #{edge_statements.size} edge statements"
         end
 
+        report_skipped_edges graph.skipped_edges
+
         node_statements.each {|statement| @graph.query(statement) }
         create_indexes graph.node_kinds
         edge_statements.each {|statement| @graph.query(statement) }
@@ -114,6 +116,23 @@ module Krane
       rescue StandardError
         discard_graph
         raise
+      end
+
+      # An edge can name an entity the cluster never defines - a role granting use of
+      # a PodSecurityPolicy that does not exist, say. Such an edge is left out of the
+      # graph, which is worth saying out loud rather than passing over in silence.
+      #
+      # @param skipped [Array<Graph::Edge>] the edges left out
+      #
+      # @return [nil]
+      def report_skipped_edges skipped
+        return nil if skipped.empty?
+
+        relations = skipped.map(&:relation).tally.map {|relation, count| "#{relation} x#{count}" }.join(', ')
+        banner :warn, "Left #{skipped.size} graph edge(s) out, as they refer to an entity " \
+                      "the cluster never defines (#{relations})."
+
+        nil
       end
 
       # @param node_kinds [Array<Symbol>] the kinds of node the graph holds
@@ -134,11 +153,16 @@ module Krane
 
       # Removes whatever a failed ingest managed to create.
       #
+      # Swallows anything that goes wrong here. Whatever failed the ingest is the
+      # useful diagnostic, and it is raised by the caller once this returns - a tidy
+      # up that fails in turn, because nothing was created yet or because the graph
+      # went away with the connection, must not take its place.
+      #
       # @return [nil]
       def discard_graph
         @graph.delete
-      rescue Clients::FalkorDB::Graph::DeleteError
-        nil # nothing was created, so there is nothing to discard
+      rescue StandardError
+        nil
       end
 
       # PodSecurityPolicies are only fetched and indexed for clusters that still serve them.
