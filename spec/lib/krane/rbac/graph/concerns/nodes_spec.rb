@@ -5,7 +5,7 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Nodes do
     Krane::Rbac::Graph::Builder.new path: '/some-path', options: OpenStruct.new(verbose: false)
   end
 
-  describe '#nodes' do
+  describe '#node_statements' do
 
     context 'with nodes buffer present' do
 
@@ -15,21 +15,62 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Nodes do
         subject.instance_variable_set(:@node_buffer, nodes)
       end
 
-      it 'maps all elements in buffer to their string representation' do
-        res  = subject.nodes
-        node = nodes.first 
-        expected_attrs = node.attrs.map {|k,v| "#{k.to_s}:'#{v.to_s}'"}.join(", ")
-        expect(res).to include(
-          "(#{node.label}:#{node.kind} {#{expected_attrs}})"
-        )
+      it 'maps all elements in buffer to a CREATE statement' do
+        node = nodes.first
+        expect(subject.node_statements).to eq ["CREATE #{node}"]
+      end
+
+    end
+
+    # The whole graph in one statement is what costs FalkorDB the memory this batching
+    # exists to avoid, so the batch size has to be an upper bound on every statement.
+    context 'with more nodes in the buffer than fit in a batch' do
+
+      let(:nodes) { build_list(:node, 5) }
+
+      before do
+        subject.instance_variable_set(:@node_buffer, nodes)
+      end
+
+      it 'splits them across statements of at most the batch size' do
+        statements = subject.node_statements batch_size: 2
+
+        expect(statements.size).to eq 3
+        expect(statements.map {|s| s.scan(/:Role \{/).size }).to eq [2, 2, 1]
       end
 
     end
 
     context 'without any node in the buffer' do
 
-      it 'returns empty Set' do
-        expect(subject.nodes).to be_empty
+      it 'returns no statements' do
+        expect(subject.node_statements).to be_empty
+      end
+
+    end
+
+  end
+
+  describe '#node_kinds' do
+
+    context 'with nodes buffer present' do
+
+      let(:nodes) { build_list(:node, 2, :role) + build_list(:node, 1, :namespace) }
+
+      before do
+        subject.instance_variable_set(:@node_buffer, nodes)
+      end
+
+      it 'returns the distinct kinds of node the graph holds' do
+        expect(subject.node_kinds).to contain_exactly(:Role, :Namespace)
+      end
+
+    end
+
+    context 'without any node in the buffer' do
+
+      it 'returns no kinds' do
+        expect(subject.node_kinds).to be_empty
       end
 
     end
