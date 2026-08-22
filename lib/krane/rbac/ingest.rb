@@ -71,13 +71,7 @@ module Krane
           cluster_role_bindings
         end
 
-        banner :debug, "Graph size = #{graph.body.bytesize} bytes" if @options.debug
-
-        @graph.query(%Q(CREATE #{graph.body}))
-        @graph.query(%Q(CREATE INDEX ON :Namespace(name)))
-        @graph.query(%Q(CREATE INDEX ON :Subject(name)))
-        @graph.query(%Q(CREATE INDEX ON :Role(name)))
-        @graph.query(%Q(CREATE INDEX ON :Rule(name)))
+        create_graph graph
 
         {
           undefined_roles:          graph.undefined_roles,
@@ -86,6 +80,65 @@ module Krane
           rbac_graph_network_nodes: graph.network_nodes,
           rbac_graph_network_edges: graph.network_edges
         }
+      end
+
+      # Writes the built graph out to FalkorDB: the nodes first, then the indexes the
+      # edge statements match those nodes back through, then the edges.
+      #
+      # This is issued as a series of batched statements rather than the single
+      # `CREATE <whole graph>` it replaced, which cost FalkorDB hundreds of megabytes
+      # to parse and apply - enough to have it killed under the memory limit krane
+      # ships with, on a cluster no larger than a few hundred roles.
+      #
+      # Batching gives up that statement's atomicity, so a failure part way through
+      # would otherwise leave a partial graph behind for the report to read as if it
+      # were complete. Discard it and let the failure surface.
+      #
+      # @param graph [Graph::Builder] the built RBAC graph
+      #
+      # @return [nil]
+      def create_graph graph
+        node_statements = graph.node_statements
+        edge_statements = graph.edge_statements
+
+        if @options.debug
+          banner :debug, "Graph size = #{(node_statements + edge_statements).sum(&:bytesize)} bytes " \
+                         "in #{node_statements.size} node and #{edge_statements.size} edge statements"
+        end
+
+        node_statements.each {|statement| @graph.query(statement) }
+        create_indexes graph.node_kinds
+        edge_statements.each {|statement| @graph.query(statement) }
+
+        nil
+      rescue StandardError
+        discard_graph
+        raise
+      end
+
+      # @param node_kinds [Array<Symbol>] the kinds of node the graph holds
+      #
+      # @return [nil]
+      def create_indexes node_kinds
+        node_kinds.each do |kind|
+          @graph.query(%Q(CREATE INDEX ON :#{kind}(#{Graph::Builder::NODE_KEY})))
+        end
+
+        @graph.query(%Q(CREATE INDEX ON :Namespace(name)))
+        @graph.query(%Q(CREATE INDEX ON :Subject(name)))
+        @graph.query(%Q(CREATE INDEX ON :Role(name)))
+        @graph.query(%Q(CREATE INDEX ON :Rule(name)))
+
+        nil
+      end
+
+      # Removes whatever a failed ingest managed to create.
+      #
+      # @return [nil]
+      def discard_graph
+        @graph.delete
+      rescue Clients::FalkorDB::Graph::DeleteError
+        nil # nothing was created, so there is nothing to discard
       end
 
       # PodSecurityPolicies are only fetched and indexed for clusters that still serve them.
