@@ -29,14 +29,14 @@ RSpec.describe Krane::Rbac::Graph::Edge do
 
   end
 
-  describe '#to_s' do
+  describe '#directions' do
 
     context 'for source node referencing destination node (direction: ->)' do
 
       subject { build(:edge, direction: '->') }
 
-      it 'returns string representation of the edge to be indexed in the graph' do
-        expect(subject.to_s).to eq %Q((#{subject.source_label})-[:#{subject.relation}]->(#{subject.destination_label}))
+      it 'relates the nodes one way only' do
+        expect(subject.directions).to eq ['->']
       end
 
     end
@@ -45,8 +45,8 @@ RSpec.describe Krane::Rbac::Graph::Edge do
 
       subject { build(:edge, direction: '<-') }
 
-      it 'returns string representation of the edge to be indexed in the graph' do
-        expect(subject.to_s).to eq %Q((#{subject.source_label})<-[:#{subject.relation}]-(#{subject.destination_label}))
+      it 'relates the nodes one way only' do
+        expect(subject.directions).to eq ['<-']
       end
 
     end
@@ -55,11 +55,8 @@ RSpec.describe Krane::Rbac::Graph::Edge do
 
       subject { build(:edge, direction: '<->') }
 
-      it 'returns string representation of the edge to be indexed in the graph' do
-        expect(subject.to_s).to eq [
-          %Q((#{subject.source_label})-[:#{subject.relation}]->(#{subject.destination_label})),
-          %Q((#{subject.source_label})<-[:#{subject.relation}]-(#{subject.destination_label}))
-        ].join(',')
+      it 'stands for a relationship each way' do
+        expect(subject.directions).to eq ['->', '<-']
       end
 
     end

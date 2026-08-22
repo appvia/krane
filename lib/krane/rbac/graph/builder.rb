@@ -51,6 +51,17 @@ module Krane
         ALL_NAMESPACES_PLACEHOLDER = '*'
         NODE_LABEL_PREFIX = 'n'
 
+        # Node property carrying the node's label. Edges are created by statements of
+        # their own and match their nodes back through it.
+        NODE_KEY = :_id
+
+        # Maximum number of nodes, or relationships, a single ingest statement carries.
+        # A statement holding the whole graph costs FalkorDB memory wildly out of
+        # proportion to the data - a 697 KB statement peaked at 529 MB against a graph
+        # that occupies 8.6 MB once it exists, well over the 200Mi the chart and the
+        # compose file both cap it at.
+        INGEST_BATCH_SIZE = 500
+
         # RBAC kinds which are namespace scoped. Objects of these kinds are only unique
         # within a namespace, so the namespace must form part of their graph node identity.
         # Without it, same-named objects in different namespaces collapse into a single
@@ -97,13 +108,6 @@ module Krane
             yield(i)
           end
           nil
-        end
-
-        # Returns RBAC graph body to be indexed in Graph database
-        #
-        # @return [String]
-        memoize def body
-          (nodes + edges).join(',')
         end
 
         # Returns RBAC graph body for the network view
