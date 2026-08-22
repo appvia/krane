@@ -123,6 +123,12 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Edges do
         expect(subject.edge_statements).to be_empty
       end
 
+      it 'records it, so the drop is not silent' do
+        subject.edge_statements
+
+        expect(subject.skipped_edges).to eq edges
+      end
+
     end
 
     context 'without any edge in the buffer' do
@@ -131,6 +137,12 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Edges do
 
       it 'returns no statements' do
         expect(subject.edge_statements).to be_empty
+      end
+
+      it 'records nothing as skipped' do
+        subject.edge_statements
+
+        expect(subject.skipped_edges).to be_empty
       end
 
     end
