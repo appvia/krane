@@ -23,14 +23,15 @@ module Krane
         property :destination_label, required: true
         property :direction,         required: true
 
-        # Returns string representation of an RBAC edge
+        # The directions this edge relates its two nodes in. A bidirectional edge
+        # ('<->') stands for a relationship each way, so it yields both.
         #
-        # @return [String]
-        def to_s
-          out = []
-          out << %Q((#{source_label})-[:#{relation}]->(#{destination_label})) if direction.include?('->')
-          out << %Q((#{source_label})<-[:#{relation}]-(#{destination_label})) if direction.include?('<-')
-          out.join(',')
+        # @return [Array<String>]
+        def directions
+          [].tap do |out|
+            out << '->' if direction.include?('->')
+            out << '<-' if direction.include?('<-')
+          end
         end
 
         # Returns network representation of an RBAC edge

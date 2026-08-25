@@ -37,12 +37,19 @@ module Krane
           is_composite:  30
         }
 
-        # Returns string representation of an RBAC node
+        # Returns string representation of an RBAC node, as a clause for a CREATE
+        # statement.
+        #
+        # The node's label is carried as a property rather than as a query scoped
+        # variable, because nodes and edges are no longer created by the same
+        # statement - the edge statements have to match these nodes back afterwards,
+        # and the label is the only stable identity they share.
         #
         # @return [String]
         def to_s
-          node_attrs = attrs.map {|k,v| "#{k.to_s}:'#{v.to_s}'"}.join(", ")
-          %Q((#{label}:#{kind} {#{node_attrs}}))
+          node_attrs = attrs.merge(Builder::NODE_KEY => label)
+                            .map {|k,v| "#{k.to_s}:'#{v.to_s}'"}.join(", ")
+          %Q((:#{kind} {#{node_attrs}}))
         end
 
         # Returns network representation of an RBAC node

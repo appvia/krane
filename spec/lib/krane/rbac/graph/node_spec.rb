@@ -35,7 +35,14 @@ RSpec.describe Krane::Rbac::Graph::Node do
 
     it 'returns string representation of the node to be indexed in the graph' do
       expected_attrs = subject.attrs.map {|k,v| "#{k.to_s}:'#{v.to_s}'"}.join(", ")
-      expect(subject.to_s).to eq %Q((#{subject.label}:#{subject.kind} {#{expected_attrs}}))
+      expect(subject.to_s).to eq %Q((:#{subject.kind} {#{expected_attrs}, _id:'#{subject.label}'}))
+    end
+
+    # The node's label is not a query scoped variable any more - edges are created by
+    # statements of their own and match their nodes back through this property.
+    it 'carries the node label as a property rather than as a bound variable' do
+      expect(subject.to_s).to include "#{Krane::Rbac::Graph::Builder::NODE_KEY}:'#{subject.label}'"
+      expect(subject.to_s).not_to start_with "(#{subject.label}:"
     end
 
   end

@@ -26,11 +26,23 @@ module Krane
           included do
             extend Memoist
 
-            # Maps graph buffer RBAC nodes to string representation
-            # 
-            # @return [Array]
-            memoize def nodes
-              @node_buffer.map(&:to_s).compact
+            # Cypher statements creating every buffered RBAC node, holding at most
+            # `batch_size` nodes each.
+            #
+            # @param batch_size [Integer] - maximum number of nodes per statement
+            #
+            # @return [Array<String>]
+            def node_statements batch_size: Builder::INGEST_BATCH_SIZE
+              @node_buffer.each_slice(batch_size).map do |batch|
+                "CREATE #{batch.map(&:to_s).join(',')}"
+              end
+            end
+
+            # The distinct kinds of node the graph holds
+            #
+            # @return [Array<Symbol>]
+            memoize def node_kinds
+              @node_buffer.map(&:kind).uniq
             end
 
             # Maps graph buffer RBAC nodes to network representation
@@ -48,6 +60,15 @@ module Krane
             end
 
             private
+
+            # Maps every node label to the kind of node it labels. Edge statements match
+            # their nodes back by label once the nodes exist, and need the kind to do so
+            # against the label scoped index rather than the whole graph.
+            #
+            # @return [Hash]
+            memoize def node_kind_lookup
+              @node_buffer.each_with_object({}) {|n, lookup| lookup[n.label] = n.kind }
+            end
 
             # Add node of given kind to the graph node buffer
             #

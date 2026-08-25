@@ -26,11 +26,41 @@ module Krane
           included do
             extend Memoist
 
-            # Maps graph buffer RBAC edges to string representation
-            # 
-            # @return [Array]
-            memoize def edges
-              @edge_buffer.map(&:to_s).compact
+            # Cypher statements creating every buffered RBAC edge, holding at most
+            # `batch_size` relationships each.
+            #
+            # Nodes are created by their own statements, so an edge cannot be written as
+            # a pattern over query scoped variables any more - it has to match both of
+            # its nodes back first. Edges are grouped by everything a single pattern
+            # fixes (the kind of node at either end, the relation and its direction), so
+            # each statement reduces to one UNWIND over the node labels it links.
+            #
+            # @param batch_size [Integer] - maximum number of relationships per statement
+            #
+            # @return [Array<String>]
+            def edge_statements batch_size: Builder::INGEST_BATCH_SIZE
+              grouped_edges.flat_map do |(source_kind, relation, destination_kind, direction), labels|
+                pattern = direction == '->' ?
+                  %Q((s)-[:#{relation}]->(d)) :
+                  %Q((s)<-[:#{relation}]-(d))
+
+                labels.each_slice(batch_size).map do |batch|
+                  pairs = batch.map {|source, destination| "['#{source}','#{destination}']" }.join(',')
+
+                  "UNWIND [#{pairs}] AS pair " \
+                  "MATCH (s:#{source_kind} {#{Builder::NODE_KEY}: pair[0]}), " \
+                        "(d:#{destination_kind} {#{Builder::NODE_KEY}: pair[1]}) " \
+                  "CREATE #{pattern}"
+                end
+              end
+            end
+
+            # Edges left out of the graph because an endpoint was never buffered as a
+            # node. Populated by #edge_statements.
+            #
+            # @return [Array<Edge>]
+            def skipped_edges
+              @skipped_edges ||= []
             end
 
             # Maps graph buffer RBAC edges to network representation
@@ -41,6 +71,35 @@ module Krane
             end
 
             private
+
+            # Buffered edges keyed by the node kinds they connect, the relation and its
+            # direction, mapping to the pairs of node labels related that way.
+            #
+            # An edge whose endpoint was never buffered as a node is recorded in
+            # #skipped_edges and left out. It means the cluster's RBAC refers to
+            # something it never defines - a role granting use of a PodSecurityPolicy
+            # that does not exist, say. The single CREATE this replaced turned such an
+            # endpoint into a node with no label and no properties, which every query
+            # binds its nodes by label and so none of them could ever match.
+            #
+            # @return [Hash]
+            def grouped_edges
+              @skipped_edges = []
+
+              @edge_buffer.each_with_object(Hash.new {|h,k| h[k] = [] }) do |e, grouped|
+                source_kind      = node_kind_lookup[e.source_label]
+                destination_kind = node_kind_lookup[e.destination_label]
+                if source_kind.nil? || destination_kind.nil?
+                  @skipped_edges << e
+                  next
+                end
+
+                e.directions.each do |direction|
+                  grouped[[source_kind, e.relation, destination_kind, direction]] <<
+                    [e.source_label, e.destination_label]
+                end
+              end
+            end
 
             # Add relation (Edge) between two nodes to the graph edge buffer
             #

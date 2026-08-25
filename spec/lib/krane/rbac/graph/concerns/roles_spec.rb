@@ -338,11 +338,12 @@ RSpec.describe Krane::Rbac::Graph::Concerns::Roles do
           expect(grant_sources.tally.values).to all(eq 1)
         end
 
-        it 'does not bind the same graph variable twice in the CREATE statement' do
-          # openCypher forbids redeclaring a bound variable within a single CREATE.
-          declared = subject.send(:nodes).join(',').scan(/\((n\d+):Role/).flatten
+        it 'gives each of them a distinct node key in the CREATE statements' do
+          # The node key is what edges match a node back through, so two Roles sharing
+          # one would have their edges land on whichever node matched first.
+          keys = subject.node_statements.join(',').scan(/\(:Role \{.*?_id:'(\w+)'\}\)/).flatten
 
-          expect(declared).to eq declared.uniq
+          expect(keys).to eq keys.uniq
         end
 
         it 'tracks every namespace the Role name is defined in' do

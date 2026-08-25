@@ -146,9 +146,14 @@ RSpec.describe Krane::Rbac::Ingest do
 
     describe '#index_rbac' do
 
+      let(:node_statements) { ['CREATE (:Role {_id:\'n1\'})', 'CREATE (:Namespace {_id:\'n2\'})'] }
+      let(:edge_statements) { ['UNWIND [[\'n1\',\'n2\']] AS pair ... CREATE (s)-[:SCOPE]->(d)'] }
       let(:build_graph_results) do 
         double( :graph, 
-          body: 'graph body...',
+          node_statements: node_statements,
+          edge_statements: edge_statements,
+          node_kinds: [:Role, :Namespace],
+          skipped_edges: [],
           undefined_roles: ['set of undefined roles'],
           unused_roles: ['set of unused roles'],
           bindings_without_subject: ['set of bindings without subject'],
@@ -176,7 +181,11 @@ RSpec.describe Krane::Rbac::Ingest do
       it 'will build and index rbac graph, and return a results map' do
         expect(@instance).to receive(:build_graph).with(dir) { build_graph_results }
 
-        expect(graph_client).to receive(:query).with(%Q(CREATE #{build_graph_results.body}))
+        (node_statements + edge_statements).each do |statement|
+          expect(graph_client).to receive(:query).with(statement)
+        end
+        expect(graph_client).to receive(:query).with(%Q(CREATE INDEX ON :Role(_id)))
+        expect(graph_client).to receive(:query).with(%Q(CREATE INDEX ON :Namespace(_id)))
         expect(graph_client).to receive(:query).with(%Q(CREATE INDEX ON :Namespace(name)))
         expect(graph_client).to receive(:query).with(%Q(CREATE INDEX ON :Subject(name)))
         expect(graph_client).to receive(:query).with(%Q(CREATE INDEX ON :Role(name)))
@@ -191,6 +200,119 @@ RSpec.describe Krane::Rbac::Ingest do
           rbac_graph_network_nodes: build_graph_results.network_nodes,
           rbac_graph_network_edges: build_graph_results.network_edges
         )
+      end
+
+      # The edge statements match nodes back through the node key, and without the index
+      # each one falls back to scanning every node of that kind.
+      it 'will create the node key indexes before issuing any edge statement' do
+        expect(@instance).to receive(:build_graph).with(dir) { build_graph_results }
+
+        issued = []
+        allow(graph_client).to receive(:query) {|statement| issued << statement }
+
+        @instance.send(:index_rbac)
+
+        expect(issued.index(%Q(CREATE INDEX ON :Role(_id)))).to be < issued.index(edge_statements.first)
+        expect(issued.index(node_statements.last)).to be < issued.index(%Q(CREATE INDEX ON :Role(_id)))
+      end
+
+    end
+
+    # Batched ingest is no longer atomic - what a failed run already applied stays in the
+    # graph, and the report would read it as a complete picture of the cluster's RBAC.
+    describe '#create_graph' do
+
+      let(:graph) do
+        double( :graph,
+          node_statements: ['CREATE (:Role {_id:\'n1\'})'],
+          edge_statements: [],
+          node_kinds:      [:Role],
+          skipped_edges:   []
+        )
+      end
+      let(:options) { OpenStruct.new(cluster: :default) }
+
+      before do
+        @instance = described_class.new(options)
+      end
+
+      context 'when a statement fails part way through' do
+
+        before do
+          allow(graph_client).to receive(:query).and_raise(
+            Krane::Clients::FalkorDB::Graph::QueryError, 'boom'
+          )
+        end
+
+        it 'discards the partial graph and re-raises' do
+          expect(graph_client).to receive(:delete).once
+
+          expect { @instance.send(:create_graph, graph) }.to raise_error(
+            Krane::Clients::FalkorDB::Graph::QueryError, 'boom'
+          )
+        end
+
+        it 'still re-raises when there is nothing to discard' do
+          allow(graph_client).to receive(:delete).and_raise(
+            Krane::Clients::FalkorDB::Graph::DeleteError, 'no such graph'
+          )
+
+          expect { @instance.send(:create_graph, graph) }.to raise_error(
+            Krane::Clients::FalkorDB::Graph::QueryError, 'boom'
+          )
+        end
+
+        # Whatever went wrong with the ingest is the useful diagnostic. A tidy up that
+        # fails in turn - the graph has gone away with the connection, say - must not
+        # take its place.
+        it 'keeps the original failure when discarding the graph fails too' do
+          allow(graph_client).to receive(:delete).and_raise(Redis::CannotConnectError, 'gone')
+
+          expect { @instance.send(:create_graph, graph) }.to raise_error(
+            Krane::Clients::FalkorDB::Graph::QueryError, 'boom'
+          )
+        end
+
+      end
+
+      # A dangling RBAC reference produces one of these. It is left out of the graph,
+      # which the operator should hear about rather than have passed over.
+      context 'when an edge refers to an entity the cluster never defines' do
+
+        let(:skipped) { [build(:edge, :security)] }
+
+        before do
+          allow(graph).to receive(:skipped_edges) { skipped }
+          allow(graph_client).to receive(:query)
+        end
+
+        it 'says so' do
+          expect(@instance).to receive(:banner).with(:warn, /Left 1 graph edge\(s\) out.*SECURITY x1/)
+
+          @instance.send(:create_graph, graph)
+        end
+
+        it 'still ingests the rest of the graph' do
+          allow(@instance).to receive(:banner)
+          expect(graph_client).to receive(:query).with('CREATE (:Role {_id:\'n1\'})')
+
+          @instance.send(:create_graph, graph)
+        end
+
+      end
+
+      context 'when every statement succeeds' do
+
+        before do
+          allow(graph_client).to receive(:query)
+        end
+
+        it 'leaves the graph in place' do
+          expect(graph_client).to receive(:delete).never
+
+          @instance.send(:create_graph, graph)
+        end
+
       end
 
     end
