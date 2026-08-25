@@ -72,6 +72,9 @@ services:
       KRANE_REPORT_INTERVAL: 30
       KRANE_REPORT_OUTPUT: 'none'
       FALKORDB_HOST: 'falkordb'
+      # Explicit port: in k8s the service-link var FALKORDB_PORT=tcp://<ip>:6379
+      # would otherwise shadow the default and krane fails parsing it as a number
+      FALKORDB_PORT: '6379'
       SLACK_WEBHOOK_URL: ''
       SLACK_CHANNEL: ''
     networks:

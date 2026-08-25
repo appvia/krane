@@ -24,5 +24,5 @@ services:
     entrypoint: ["/bin/bash", "-c", "sleep 86400"]
     # Uncomment volume below if you want to run report against
     # a cluster by passing specific kube context to `report` command.
-    volumes:
-      - ~/.kube/config:/app/.kube/config:ro
+    # volumes:
+    #   - ~/.kube/config:/app/.kube/config:ro
