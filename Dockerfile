@@ -70,6 +70,10 @@ RUN curl -sL -o /usr/bin/kubectl ${KUBECTL_BINARY_URL} && chmod +x /usr/bin/kube
 RUN addgroup -g 1000 -S appuser \
     && adduser -u 1000 -S appuser -G appuser
 
+# WORKDIR creates root-owned dirs regardless of USER (classic builder) - the
+# app needs to write $APP_PATH/cache at runtime
+RUN mkdir -p $APP_PATH/cache && chown -R 1000:1000 $APP_PATH
+
 USER 1000
 
 ENV BUNDLE_PATH=/usr/local/bundle \

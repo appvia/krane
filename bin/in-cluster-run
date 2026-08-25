@@ -4,7 +4,9 @@
 : ${KRANE_REPORT_OUTPUT:=none}
 
 echo "Verify FalkorDB is UP..."
-while [[ "$((printf "PING\r\n";) | nc falkordb 6379 -w 2 | awk '{$1=$1};1')" != "+PONG" ]];
+# timeout bounds the whole probe: busybox nc's -w only limits the connect, so a
+# connection established to a dying falkordb pod would otherwise block forever
+while [[ "$((printf "PING\r\n";) | timeout 5 nc falkordb 6379 -w 2 | awk '{$1=$1};1')" != "+PONG" ]];
   do echo "* Waiting for falkordb to become available" && sleep 2;
 done
 
