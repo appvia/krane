@@ -32,7 +32,7 @@
     "@tanstack/vue-virtual": "^3.13.35",
     "lucide-vue-next": "^1.0.0",
     "vis-data": "^8.0.5",
-    "vis-network": "^10.1.1",
+    "vis-network": "^10.1.2",
     "vue": "^3.5.41",
     "vue-router": "^5.2.0",
     "yaml": "^2.9.0"
