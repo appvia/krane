@@ -73,3 +73,14 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Config labels
+*/}}
+{{- define "krane.configLabels" -}}
+app.kubernetes.io/name: {{ include "krane.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: {{ include "krane.name" . }}
+app.kubernetes.io/part-of: {{ include "krane.name" . }}
+network/krane: "true"
+{{- end }}
