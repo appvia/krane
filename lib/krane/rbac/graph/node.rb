@@ -41,7 +41,7 @@ module Krane
         #
         # @return [String]
         def to_s
-          node_attrs = attrs.map {|k,v| "#{k.to_s}:'#{v.to_s}'"}.join(", ")
+          node_attrs = attrs.map {|k,v| "#{k.to_s}:'#{escape(v)}'"}.join(", ")
           %Q((#{label}:#{kind} {#{node_attrs}}))
         end
 
@@ -88,6 +88,17 @@ module Krane
             value: node_weitghs[label],
             title: title
           }
+        end
+
+        private
+
+        # Attribute values carry cluster-supplied strings (e.g. RoleBinding subject
+        # names, which Kubernetes does not format-validate for User/Group kinds) and
+        # are rendered into single-quoted Cypher literals executed verbatim by
+        # Ingest#index_rbac - quotes and backslashes must be escaped here or a
+        # crafted value breaks out of the literal and injects arbitrary Cypher.
+        def escape value
+          value.to_s.gsub(/['\\]/) { |c| "\\#{c}" }
         end
       end
 
