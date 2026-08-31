@@ -34,8 +34,39 @@ RSpec.describe Krane::Rbac::Graph::Node do
     subject { build(:node) }
 
     it 'returns string representation of the node to be indexed in the graph' do
-      expected_attrs = subject.attrs.map {|k,v| "#{k.to_s}:'#{v.to_s}'"}.join(", ")
-      expect(subject.to_s).to eq %Q((#{subject.label}:#{subject.kind} {#{expected_attrs}}))
+      expect(subject.to_s).to eq %q((label:Role {kind:'Role', name:'example-role'}))
+    end
+
+    # Attribute values carry cluster-supplied strings (e.g. RoleBinding subject names)
+    # rendered into single-quoted Cypher literals - unescaped quotes would let a
+    # crafted value break out of the literal and inject arbitrary Cypher into the
+    # CREATE statement (GHSA-67qw-mcw6-xh54).
+    context 'with attribute values containing Cypher string literal metacharacters' do
+
+      context 'with single quotes and a comment marker in the value' do
+
+        subject do
+          build(:node, :subject, attrs: { kind: :User, name: "x'}) CREATE (:Pwned) //" })
+        end
+
+        it 'escapes single quotes so the value cannot terminate the literal' do
+          expect(subject.to_s).to eq "(label:Subject {kind:'User', name:'x\\'}) CREATE (:Pwned) //'})"
+        end
+
+      end
+
+      context 'with a trailing backslash in the value' do
+
+        subject do
+          build(:node, :subject, attrs: { kind: :User, name: "alice\\" })
+        end
+
+        it 'escapes backslashes so the value cannot escape the closing quote' do
+          expect(subject.to_s).to eq "(label:Subject {kind:'User', name:'alice\\\\'})"
+        end
+
+      end
+
     end
 
   end
