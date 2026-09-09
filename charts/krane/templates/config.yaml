@@ -1,0 +1,35 @@
+{{- if .Values.config }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "krane.fullname" . }}
+  labels:
+    {{- include "krane.labels" . | nindent 4 }}
+    {{- include "krane.configLabels" . | nindent 4 }}
+data:
+  {{- if .Values.config.config }}
+  {{- with .Values.config.config }}
+  config.yaml: |
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.config.customrules }}
+  {{- with .Values.config.customrules }}
+  custom-rules.yaml: |
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.config.rules }}
+  {{- with .Values.config.rules }}
+  rules.yaml: |
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.config.whitelist }}
+  {{- with .Values.config.whitelist }}
+  whitelist.yaml: |
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+{{- end }}
