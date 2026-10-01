@@ -54,7 +54,7 @@ GEM
     domain_name (0.6.20240107)
     drb (2.2.3)
     erb (6.0.7)
-    facets (3.2.2)
+    facets (4.0.0)
     factory_bot (6.6.0)
       activesupport (>= 6.1.0)
     faraday (2.14.3)
