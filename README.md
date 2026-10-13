@@ -378,7 +378,11 @@ Rule can contain any of the following attributes:
     ```
      Attributes and values follow [Kubernetes RBAC role specification](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-examples).
 
-     Values of a given attribute are matched together (logical AND), so a role only matches when it grants all of them. `apiGroups` are the exception - a role rule names a single API group per resource, so their values are matched as alternatives (logical OR), and the `*` API group is always accepted alongside them. Omitting `apiGroups` matches a role rule naming *any* API group, which for a resource that exists in one group only (or for the `*` resource) reports a wider scope than the role actually grants.
+     Values of a given attribute are matched together (logical AND), so a role only matches when it grants all of them. `apiGroups` are the exception - a role rule names a single API group per resource, so their values are matched as alternatives (logical OR). Omitting `apiGroups` matches a role rule naming *any* API group, which for a resource that exists in one group only (or for the `*` resource) reports a wider scope than the role actually grants.
+
+     The `*` wildcard a role rule may grant in place of an API group, a resource or a verb covers whatever the match rule names, so it is accepted alongside it: the example above matches a role granting `update` on `cronjobs`, and equally one granting `verbs: ['*']`, `resources: ['*']` or `apiGroups: ['*']`. A `nonResourceURLs` value is matched as written, since RBAC matches a URL by prefix and `*` is only one of the patterns that can cover it.
+
+     One grant is left out: every verb on every resource of the `*` API group. That role can do anything, which is not a specific risk to report against a named resource and verb - `unrestricted-cluster-wide-subjects` and `unrestricted-ns-level-subjects` report it in those words instead, for every subject it reaches. Without that exclusion such a role would appear under every `risky-role` rule there is, burying the findings a reader can act on. A role rule naming an API group is not excluded, `core` included - it grants nothing outside that group, so the resources it does cover are still worth naming.
 
 - `custom_params` [Optional] Map of custom key-value pairs to be evaluated and replaced in a rule `query` and `writer` representation.
   - Example:

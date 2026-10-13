@@ -24,8 +24,8 @@ module Krane
           # the graph (see Rbac::Graph::Concerns::RoleAccessRules#process_resource_rule).
           CORE_API_GROUP = 'core'
 
-          # Wildcard a role rule uses to mean "every API group".
-          ANY_API_GROUP = '*'
+          # Wildcard a role rule uses to mean "every API group", "every resource" or "every verb".
+          WILDCARD = '*'
 
           def initialize attrs = {}
             @non_resource_urls = attrs.fetch(:nonResourceURLs, [])
@@ -47,15 +47,19 @@ module Krane
           # Every attribute apart from the API groups selects a single value, so the selectors are
           # the product of them - the query builder emits one graph MATCH per selector and requires
           # all of them to hit the same role. API groups are the exception: their entries are
-          # alternatives, so they are carried on the selector as an :api_groups list for the builder
-          # to match in a single condition, rather than being multiplied out into MATCHes that no
-          # role rule can satisfy at once.
+          # alternatives, so a single selector carries all of them, rather than being multiplied out
+          # into MATCHes that no role rule can satisfy at once.
+          #
+          # A selector value is either a single value the matched rule's property must equal, or a
+          # list of alternatives any one of which will do. The API groups are always a list; a
+          # resource or a verb becomes one because the `*` a role rule may grant in its place covers
+          # the named value too.
           #
           # @return [Array] an array of rule attribute selectors
           def selectors
             if resource_rule? # Resource specific rules
               i = [{type: 'resource'}]
-              i = i.product([{api_groups: api_groups}]) if api_groups.any?
+              i = i.product([{api_group: api_groups}]) if api_groups.any?
               i = i.product(resources)  if resources.any?
               i = i.product(verbs)      if verbs.any?
             else # Non-resource URLs rules
@@ -76,20 +80,30 @@ module Krane
           # is always accepted - a role rule granting every API group grants this one too.
           def api_groups
             return [] if @api_groups.empty?
-            @api_groups.map {|i| i.blank? ? CORE_API_GROUP : i }.push(ANY_API_GROUP).uniq
+            with_wildcard(@api_groups.map {|i| i.blank? ? CORE_API_GROUP : i })
           end
 
           def resources
-            @resources.map {|i| {resource: i}}
+            @resources.map {|i| {resource: with_wildcard(i)}}
           end
 
           def verbs
-            @verbs.map {|i| {verb: i}}
+            @verbs.map {|i| {verb: with_wildcard(i)}}
           end
 
+          # Non-resource URLs are left as written: RBAC matches them by prefix, so `*` is one of
+          # several patterns a role rule may use to cover a URL and singling it out would be
+          # arbitrary. No shipped rule matches on them.
           def urls
             @non_resource_urls.map {|i| {url: i}}
           end
+
+          # A role rule granting the wildcard grants whatever the match rule names, so accept it
+          # alongside. Values already asking for the wildcard are left as they are.
+          def with_wildcard values
+            (Array(values) + [WILDCARD]).uniq
+          end
+
         end
 
       end

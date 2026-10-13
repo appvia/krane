@@ -97,6 +97,39 @@ RSpec.describe 'the shipped risk rules' do
       expect(subject[:query]).to include %q(ru0.api_group IN ['core', '*'])
     end
 
+    # Issue #529: a role granting `verbs: ['*']` on secrets, or `get` on `resources: ['*']`
+    # within the core group, allows viewing secrets and used not to be matched at all.
+    it 'matches a rule granting the wildcard resource, or the wildcard verb' do
+      expect(subject[:query]).to include %q(ru0.resource IN ['secrets', '*'])
+      expect(subject[:query]).to include %q(ru0.verb IN ['get', '*'])
+    end
+
+  end
+
+  # Issue #529, second half. Accepting the wildcard in place of a named resource and verb means a
+  # role granting everything matches every risky-role rule there is, which buries the findings a
+  # reader can act on. `unrestricted-cluster-wide-subjects` and `unrestricted-ns-level-subjects`
+  # report that role in the words that fit it, so the risky-role rules stop short of it.
+  #
+  # Only the wildcard API group is excluded. A role rule naming a group - `core` included - grants
+  # nothing outside it, so the resources it does cover stay worth naming.
+  it 'excludes a role rule granting unrestricted access from every resource match rule' do
+    matching = Krane::Config::Risk.new.rules.select { |item| item[:match_rules].to_a.any? }
+
+    unguarded = matching.reject do |item|
+      resource_rules = item[:match_rules].count { |match_rule| match_rule[:resources].present? }
+      query          = rule(item[:id])[:query]
+
+      resource_rules.times.all? do |index|
+        query.include?(
+          "NOT (ru#{index}.api_group = '*' " \
+          "AND ru#{index}.resource = '*' AND ru#{index}.verb = '*')"
+        )
+      end
+    end
+
+    expect(matching).not_to be_empty
+    expect(unguarded.map { |item| item[:id] }).to be_empty
   end
 
   # A finding's items are marker-rendered, so `name_of(...)` becomes bold in the dashboard. Its
