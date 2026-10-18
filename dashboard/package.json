@@ -33,7 +33,7 @@
     "lucide-vue-next": "^1.0.0",
     "vis-data": "^8.0.5",
     "vis-network": "^10.1.1",
-    "vue": "^3.5.41",
+    "vue": "^3.5.44",
     "vue-router": "^5.2.0",
     "yaml": "^2.9.0"
   },
