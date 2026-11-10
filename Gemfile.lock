@@ -156,7 +156,7 @@ GEM
     profile (0.4.0)
     public_suffix (7.0.5)
     racc (1.8.1)
-    rack (3.2.7)
+    rack (3.2.8)
     rack-oauth2 (2.3.0)
       activesupport
       attr_required
